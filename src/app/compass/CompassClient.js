@@ -59,6 +59,8 @@ const CATEGORY_BUTTON_STYLES = {
   allyship: "border-emerald-200/60 bg-emerald-300/[0.18] text-emerald-50 shadow-[0_6px_18px_rgba(52,211,153,0.16)]",
 };
 
+const MOBILE_STARTER_SLUGS = ["queer", "pronouns", "non-binary", "transgender", "lgbtqia", "coming-out"];
+
 function normalizeSearch(value) {
   return String(value || "")
     .toLocaleLowerCase("en")
@@ -216,8 +218,10 @@ export default function CompassClient() {
   const [category, setCategory] = useState("all");
   const [selectedSlug, setSelectedSlug] = useState("flinta");
   const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
+  const [mobileHasSelectedTerm, setMobileHasSelectedTerm] = useState(false);
   const detailRef = useRef(null);
   const mobileDetailRef = useRef(null);
+  const mobileListRef = useRef(null);
   const [detailHeight, setDetailHeight] = useState(0);
   const libraryRef = useRef(null);
   const emptyRef = useRef(null);
@@ -235,6 +239,7 @@ export default function CompassClient() {
 
   function selectTerm(slug) {
     setSelectedSlug(slug);
+    setMobileHasSelectedTerm(true);
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
       window.setTimeout(() => {
         mobileDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -267,6 +272,14 @@ export default function CompassClient() {
   }, [category, query]);
 
   const selectedTerm = filteredTerms.find((term) => term.slug === selectedSlug) || filteredTerms[0] || null;
+  const starterTerms = MOBILE_STARTER_SLUGS.map((slug) => COMPASS_TERMS.find((term) => term.slug === slug)).filter(Boolean);
+  const mobileTermGroups = useMemo(() => filteredTerms.reduce((groups, term) => {
+    const letter = String(term.name || "#").charAt(0).toUpperCase();
+    if (!groups[letter]) groups[letter] = [];
+    groups[letter].push(term);
+    return groups;
+  }, {}), [filteredTerms]);
+  const mobileLetters = Object.keys(mobileTermGroups).sort();
 
 
   function updateSearch(value) {
@@ -289,6 +302,7 @@ export default function CompassClient() {
 
     if (match) {
       setSelectedSlug(match.slug);
+      setMobileHasSelectedTerm(true);
       window.setTimeout(() => {
         const target = window.matchMedia("(max-width: 1023px)").matches ? mobileDetailRef.current : detailRef.current;
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -378,7 +392,7 @@ export default function CompassClient() {
             <p role="status" aria-live="polite" className="text-xs text-white/38">{filteredTerms.length} {filteredTerms.length === 1 ? "entry" : "entries"}</p>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-2" aria-label="Filter Queer Dictionary by theme">
+          <div className="mt-5 hidden flex-wrap gap-2 lg:flex" aria-label="Filter Queer Dictionary by theme">
             {COMPASS_CATEGORIES.map((item) => (
               <button
                 key={item.key}
@@ -393,23 +407,35 @@ export default function CompassClient() {
           </div>
 
           <div className="mt-6 lg:hidden">
-            <button
-              type="button"
-              aria-expanded={mobilePickerOpen}
-              aria-controls="dictionary-mobile-picker"
-              onClick={() => setMobilePickerOpen(true)}
-              className="flex w-full items-center justify-between gap-4 rounded-[20px] border border-cyan-100/28 bg-[linear-gradient(145deg,rgba(24,48,67,0.88),rgba(22,23,42,0.96))] px-4 py-3.5 text-left shadow-[0_12px_32px_rgba(0,0,0,0.22)] transition hover:border-cyan-100/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45"
-            >
-              <span>
-                <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/66">Currently reading</span>
-                <span className="mt-1 block text-base font-semibold text-[#fff9f0]">{selectedTerm?.name || "Choose a term"}</span>
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100/30 bg-cyan-100/[0.10] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-50">
-                Browse terms <ArrowUpRight size={13} aria-hidden="true" />
-              </span>
-            </button>
-
-            {selectedTerm ? <div className="mt-4"><CompassTermDetail term={selectedTerm} detailRef={mobileDetailRef} onSelectRelated={selectRelatedTerm} /></div> : null}
+            {!mobileHasSelectedTerm ? (
+              <div className="rounded-[24px] border border-white/12 bg-[linear-gradient(145deg,rgba(29,32,61,0.94),rgba(17,19,38,0.98))] p-5 shadow-[0_16px_40px_rgba(0,0,0,0.2)]">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.17em] text-cyan-100/70">Start exploring</p>
+                <h3 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.03em] text-[#fff9f0]">What would you like to explore?</h3>
+                <p className="mt-2 text-sm leading-6 text-white/60">Choose a theme, start with a familiar word, or browse the full dictionary from A to Z.</p>
+                <div className="mt-5 grid grid-cols-2 gap-2">
+                  {COMPASS_CATEGORIES.filter((item) => item.key !== "all").map((item) => (
+                    <button key={item.key} type="button" onClick={() => { updateCategory(item.key); setMobilePickerOpen(true); }} className={`rounded-2xl border px-3 py-3 text-left text-xs font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${CATEGORY_BUTTON_STYLES[item.key]}`}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/48">Start with these terms</p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {starterTerms.map((term) => (
+                      <button key={term.slug} type="button" onClick={() => selectTerm(term.slug)} className="rounded-xl border border-white/14 bg-white/[0.04] px-3 py-2.5 text-left text-xs font-medium text-white/82 transition hover:border-cyan-100/38 hover:bg-cyan-100/[0.07] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">{term.name}</button>
+                    ))}
+                  </div>
+                </div>
+                <button type="button" aria-expanded={mobilePickerOpen} aria-controls="dictionary-mobile-picker" onClick={() => { setCategory("all"); setQuery(""); setMobilePickerOpen(true); }} className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-100/34 bg-cyan-100/[0.12] px-4 py-3 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/56 hover:bg-cyan-100/[0.18] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Browse all terms A–Z <ArrowUpRight size={14} aria-hidden="true" /></button>
+              </div>
+            ) : (
+              <>
+                <button type="button" onClick={() => { setMobileHasSelectedTerm(false); setCategory("all"); setQuery(""); }} className="inline-flex items-center gap-2 text-sm font-medium text-cyan-100/86 underline decoration-cyan-100/35 underline-offset-4 transition hover:text-cyan-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">← Explore another term</button>
+                {selectedTerm ? <div className="mt-4"><CompassTermDetail term={selectedTerm} detailRef={mobileDetailRef} onSelectRelated={selectRelatedTerm} /></div> : null}
+                <button type="button" onClick={() => { setCategory("all"); setQuery(""); setMobilePickerOpen(true); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-100/28 bg-cyan-100/[0.08] px-4 py-3 text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/50 hover:bg-cyan-100/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Browse all terms A–Z <ArrowUpRight size={14} aria-hidden="true" /></button>
+              </>
+            )}
           </div>
 
           <div
@@ -463,7 +489,7 @@ export default function CompassClient() {
                 <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
                   <div>
                     <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/66">Queer Dictionary</p>
-                    <h3 id="dictionary-mobile-picker-title" className="mt-1 text-lg font-semibold text-[#fff9f0]">Browse {filteredTerms.length} terms</h3>
+                    <h3 id="dictionary-mobile-picker-title" className="mt-1 text-lg font-semibold text-[#fff9f0]">All terms A–Z</h3>
                   </div>
                   <button type="button" onClick={() => setMobilePickerOpen(false)} className="rounded-full border border-white/16 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Close</button>
                 </div>
@@ -478,25 +504,37 @@ export default function CompassClient() {
                       <button key={item.key} type="button" aria-pressed={category === item.key} onClick={() => updateCategory(item.key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-medium transition ${category === item.key ? CATEGORY_BUTTON_STYLES[item.key] : "border-white/18 bg-white/[0.035] text-white/68"}`}>{item.label}</button>
                     ))}
                   </div>
+                  <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1" aria-label="Jump to letter">
+                    {mobileLetters.map((letter) => (
+                      <button key={letter} type="button" onClick={() => mobileListRef.current?.querySelector(`[data-letter="${letter}"]`)?.scrollIntoView({ block: "start" })} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/14 bg-white/[0.04] text-xs font-semibold text-cyan-50 transition hover:border-cyan-100/44 hover:bg-cyan-100/[0.10] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">{letter}</button>
+                    ))}
+                  </div>
                 </div>
-                <div className="max-h-[calc(78dvh-12rem)] overflow-y-auto overscroll-contain p-3">
-                  {filteredTerms.map((term) => {
-                    const active = selectedTerm?.slug === term.slug;
-                    const tone = TERM_TONES[term.category] || TERM_TONES.identity;
-                    return (
-                      <button
-                        key={term.slug}
-                        type="button"
-                        onClick={() => { setMobilePickerOpen(false); selectTerm(term.slug); }}
-                        aria-pressed={active}
-                        className={`mb-2 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${active ? tone.active : "border-white/10 bg-white/[0.035] text-white/78 hover:border-white/24"}`}
-                      >
-                        <span className={`h-2 w-2 shrink-0 rounded-full ${tone.marker}`} aria-hidden="true" />
-                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{term.name}</span><span className={`mt-0.5 block text-[10px] uppercase tracking-[0.12em] ${tone.label}`}>{term.type}</span></span>
-                        <ArrowUpRight size={15} className="shrink-0 text-white/38" aria-hidden="true" />
-                      </button>
-                    );
-                  })}
+                <div ref={mobileListRef} className="max-h-[calc(78dvh-14.5rem)] overflow-y-auto overscroll-contain p-3">
+                  {mobileLetters.map((letter) => (
+                    <section key={letter} data-letter={letter} className="scroll-mt-2">
+                      <h4 className="sticky top-0 z-10 -mx-3 border-y border-white/8 bg-[#10172c]/95 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/72 backdrop-blur">{letter}</h4>
+                      <div className="pt-2">
+                        {mobileTermGroups[letter].map((term) => {
+                          const active = selectedTerm?.slug === term.slug;
+                          const tone = TERM_TONES[term.category] || TERM_TONES.identity;
+                          return (
+                            <button
+                              key={term.slug}
+                              type="button"
+                              onClick={() => { setMobilePickerOpen(false); selectTerm(term.slug); }}
+                              aria-pressed={active}
+                              className={`mb-2 flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${active ? tone.active : "border-white/10 bg-white/[0.035] text-white/78 hover:border-white/24"}`}
+                            >
+                              <span className={`h-2 w-2 shrink-0 rounded-full ${tone.marker}`} aria-hidden="true" />
+                              <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{term.name}</span><span className={`mt-0.5 block text-[10px] uppercase tracking-[0.12em] ${tone.label}`}>{term.type}</span></span>
+                              <ArrowUpRight size={15} className="shrink-0 text-white/38" aria-hidden="true" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
                   {filteredTerms.length === 0 ? <p className="px-3 py-8 text-center text-sm text-white/56">No terms match these filters yet.</p> : null}
                 </div>
               </section>

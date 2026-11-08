@@ -41,7 +41,8 @@ assert(cityDirectory.includes("PAGE_SIZE = 24") && cityDirectory.includes("evalu
 assert(cityDirectory.includes("index: false, follow: true"), "directory pages after page one must be crawlable but not indexable");
 assert(dictionaryClient.includes("overflow-x-hidden") && !dictionaryClient.includes("min-h-screen overflow-hidden"), "dictionary must not disable sticky positioning with a scrolling ancestor");
 assert(dictionaryClient.includes("lg:overflow-y-auto") && dictionaryClient.includes("Dictionary entries"), "dictionary entry list must scroll independently on desktop");
-assert(dictionaryClient.includes("mobilePickerOpen") && dictionaryClient.includes("Browse terms") && dictionaryClient.includes("dictionary-mobile-picker"), "mobile dictionary must offer a compact term picker");
+assert(dictionaryClient.includes("mobilePickerOpen") && dictionaryClient.includes("Browse all terms A–Z") && dictionaryClient.includes("dictionary-mobile-picker"), "mobile dictionary must offer an explicit A–Z term picker");
+assert(dictionaryClient.includes("What would you like to explore?") && dictionaryClient.includes("Start with these terms"), "mobile dictionary must guide first-time visitors before showing a definition");
 const requiredDictionaryTerms = ["Consent", "Homophobia", "Gender dysphoria", "Gender incongruence", "Sex characteristics", "Gender binary", "Bigender", "Demigender", "Demiromantic", "Gender euphoria"];
 assert(requiredDictionaryTerms.every((name) => COMPASS_TERMS.some((term) => term.name === name)), "dictionary must include the core terminology expansion");
 assert(COMPASS_TERMS.every((term) => term.reviewedOn && term.sources?.length && term.nuance && term.actions?.length), "every dictionary term must show a review date, sources, nuance and practical guidance");
