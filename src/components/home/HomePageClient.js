@@ -1235,7 +1235,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-white/38"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 max-sm:z-10 max-sm:pointer-events-none text-white/75 sm:text-white/38"
                       size={17}
                       aria-hidden="true"
                     />
@@ -1258,7 +1258,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                       }}
                       onFocus={() => setShowResults(true)}
                       placeholder={t("home.searchPlaceholder", "Search a city, venue or event")}
-                      className="h-12 w-full rounded-[21px] border border-white/13 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
+                      className="h-12 w-full rounded-[21px] border border-white/13 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.025))] py-0 pl-11 pr-4 text-[15px] leading-none text-white outline-none backdrop-blur placeholder:text-white/72 sm:placeholder:text-white/42 focus:border-cyan-300/48 focus:ring-2 focus:ring-cyan-300/22 sm:h-[52px] sm:text-base"
                     />
                   </div>
 
@@ -1272,7 +1272,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
 
                   {showResults && results.length > 0 && (
-                    <div aria-label={t("home.instantResults", "Instant search results")} className="absolute inset-x-3 top-[3.75rem] z-[70] mt-2 w-auto max-h-[55vh] overflow-y-auto overflow-x-hidden rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:max-h-[360px] sm:rounded-[24px] lg:max-h-[560px]">
+                    <div aria-label={t("home.instantResults", "Instant search results")} className="absolute inset-x-0 top-12 z-[70] mt-1 w-auto max-h-[55vh] overflow-y-auto overflow-x-hidden rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:max-h-[360px] sm:rounded-[24px] lg:max-h-[560px]">
                       {results.map((result) => (
                         <div
                           key={`${result.type}-${result.id}`}
@@ -1323,7 +1323,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
                   {showResults && query.trim().length >= 2 && results.length === 0 && (
-                    <div role="status" aria-live="polite" className="absolute inset-x-3 top-[3.75rem] z-[70] mt-2 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:rounded-[24px]">
+                    <div role="status" aria-live="polite" className="absolute inset-x-0 top-12 z-[70] mt-1 rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] px-5 py-4 text-sm text-white/60 shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:rounded-[24px]">
                       {searchState === "loading"
                         ? ({ en: "Searching…", de: "Suche läuft…", fr: "Recherche en cours…", es: "Buscando…" }[locale] || "Searching…")
                         : searchState === "error"
