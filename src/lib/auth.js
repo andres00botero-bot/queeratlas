@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { emptyMemberProfile, getMemberProfile, saveMemberProfile } from "@/lib/memberProfile";
 import { captureOperationalError } from "@/lib/monitoring";
 import { resolveAdminAccess } from "@/lib/adminAccess";
-import { privateAvatar } from "@/lib/memberPrivacy";
+import { privacyCall, privateAvatar } from "@/lib/memberPrivacy";
 import { prepareMemberImage } from "@/lib/memberImages";
 
 const AuthContext = createContext(null);
@@ -181,6 +181,23 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
+    const routeAfterLogin = async (userId) => {
+      if (!mounted || activeUserId.current !== userId) return;
+      let target = consumePostLoginTarget();
+      if (!target) return;
+      if (target === "/privacy-settings?onboarding=1") {
+        try {
+          const state = await privacyCall("state");
+          if (state?.profile?.joined_at) target = "/";
+        } catch {
+          // The onboarding page can retry if the stored choice is unavailable.
+        }
+      }
+      if (!mounted || activeUserId.current !== userId) return;
+      const current = window.location.pathname + window.location.search;
+      if (current !== target) window.location.replace(target);
+    };
+
     const hydrate = async () => {
       try {
         const { data } = await supabase.auth.getSession();
@@ -201,13 +218,7 @@ export function AuthProvider({ children }) {
         }
 
         if (data.session?.user) {
-          const target = consumePostLoginTarget();
-          if (target) {
-            const current = `${window.location.pathname}${window.location.search}`;
-            if (current !== target) {
-              window.location.replace(target);
-            }
-          }
+          await routeAfterLogin(data.session.user.id);
         }
       } catch (error) {
         captureOperationalError("auth_hydration_fail", error, {
@@ -245,13 +256,7 @@ export function AuthProvider({ children }) {
       setIsLoading(false);
 
       if (nextSession?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        const target = consumePostLoginTarget();
-        if (target) {
-          const current = `${window.location.pathname}${window.location.search}`;
-          if (current !== target) {
-            window.location.replace(target);
-          }
-        }
+        queueMicrotask(() => routeAfterLogin(nextSession.user.id));
       }
     });
 
