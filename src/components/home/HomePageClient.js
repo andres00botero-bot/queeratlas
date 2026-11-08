@@ -1065,7 +1065,7 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#0b1020]/34 to-[#0b1020]" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
-          <div className="mb-5 flex items-center justify-between gap-3 sm:mb-14 sm:gap-4 lg:mb-0">
+          <div className={`mb-5 flex items-center justify-between gap-3 sm:mb-14 sm:gap-4 lg:mb-0 ${isMember ? "max-lg:flex-wrap max-lg:mb-0! max-lg:gap-y-2" : ""}`}>
             <div className="flex items-center gap-2.5 sm:gap-3">
               <Image
                 src="/queer-atlas-logo.png"
@@ -1083,7 +1083,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               </div>
             </div>
 
-              <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
+              <div className={`flex shrink-0 items-center gap-2.5 sm:gap-3 ${isMember ? "max-lg:contents" : ""}`}>
               <div className="relative flex h-11 shrink-0 items-center rounded-full text-white/80 transition hover:bg-white/5 focus-within:ring-2 focus-within:ring-cyan-100/80">
                 <Globe2 className="pointer-events-none absolute left-3 h-4 w-4" aria-hidden="true" />
                 <span className="pointer-events-none pl-9 pr-8 text-sm font-medium sm:hidden" aria-hidden="true">{locale.toUpperCase()}</span>
@@ -1105,6 +1105,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 h-3.5 w-3.5 text-white/60" aria-hidden="true" />
               </div>
+              <div className={isMember ? "contents max-lg:flex max-lg:w-full max-lg:flex-wrap max-lg:items-center max-lg:gap-2" : "contents"}>
               <a
                 href="#support-queeratlas"
                 onClick={() => trackHomeAction("donate_anchor", "support-queeratlas", { placement: "header" })}
@@ -1114,7 +1115,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 {t("home.support", "Support")}
               </a>
               {isMember && (
-                <div className="qa-eyebrow hidden rounded-full border border-white/14 bg-white/5 px-4 py-2 text-white/76 backdrop-blur sm:block">
+                <div className="qa-eyebrow hidden text-white/76 sm:block lg:rounded-full lg:border lg:border-white/14 lg:bg-white/5 lg:px-4 lg:py-2 lg:backdrop-blur">
                   {heroIdentityLabel}
                 </div>
               )}
@@ -1174,6 +1175,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                   {isSigningOut ? t("home.signingOut", "Signing out...") : t("home.signOut", "Sign out")}
                 </button>
               )}
+              </div>
             </div>
           </div>
 
@@ -1196,7 +1198,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               </div>
 
-              <p className="qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
+              <p className={`qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px] ${isMember ? "max-lg:mt-4!" : ""}`}>
                 {t("home.whereverYouAre", "Wherever you are")}
               </p>
               {locale === "es" ? (

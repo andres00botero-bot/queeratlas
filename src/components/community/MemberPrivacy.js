@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, Shield, UserRound, ArrowUpRight } from "lucide-react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { memberPrivacyCopy } from "@/lib/memberPrivacyCopy";
@@ -102,6 +103,11 @@ function MemberPrivacySettingsContent({ previewState = null }) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const dirty = useRef(false);
+  const completedOnboarding = Boolean(state?.profile?.joined_at && !previewState && !busy &&
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("onboarding") === "1");
+  useEffect(() => {
+    if (completedOnboarding) router.replace(toLocalePath("/", locale));
+  }, [completedOnboarding, locale, router]);
   useEffect(() => { if (state?.profile && !dirty.current) setDraft(normalizeSharedProfile(state.profile)); }, [state]);
   const change = (key, value) => { dirty.current = true; setDraft(d => ({ ...d, [key]: value })); setNotice(""); };
   const act = async (name, args, success = copy.saved) => {
@@ -147,6 +153,7 @@ function MemberPrivacySettingsContent({ previewState = null }) {
   };
   if (!user && !previewState) return <section className="space-y-4 text-[#F5F1E8]"><header className={panel}><p className="text-xs font-semibold uppercase tracking-wider text-[#B9AAF0]">{copy.eyebrow}</p><h1 className="mt-2 text-2xl font-semibold">{copy.title}</h1><p className="mt-3 text-sm leading-6 text-[#BCC7D2]">{copy.intro}</p><Link href="/?join=true" className={`${primary} mt-4`}>{copy.settings}</Link></header><PrivacyHelp copy={copy} /></section>;
   const preview = sharedProfilePreview(draft);
+  if (completedOnboarding) return null;
   const pendingDeletion = Boolean(state?.profile?.deletion_requested_at);
   return <section className="space-y-4 text-[#F5F1E8]" aria-labelledby="privacy-title">
     <header><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#80D4C4]">{copy.eyebrow}</p><h1 id="privacy-title" className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{copy.title}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#BCC7D2]">{copy.intro}</p></header>

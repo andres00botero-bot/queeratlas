@@ -78,6 +78,14 @@ export function proxy(request) {
   }
 
   const cookieLocaleValue = request.cookies.get(LOCALE_COOKIE)?.value;
+  // A localized rewrite can re-enter the proxy at the unprefixed path.
+  const rewrittenLocale = request.headers.get("x-qa-locale");
+  if (rewrittenLocale && isSupportedLocale(rewrittenLocale) && isPublishedLocale(rewrittenLocale) &&
+      request.headers.get("x-qa-pathname") === pathname) {
+    return NextResponse.next({
+      request: { headers: withLocaleHeader(request, normalizeLocale(rewrittenLocale), pathname) },
+    });
+  }
   const cookieLocale = normalizeLocale(cookieLocaleValue);
   const hasSavedLocale = Boolean(cookieLocaleValue && isSupportedLocale(cookieLocaleValue) && isPublishedLocale(cookieLocale));
   const hasManualLocalePreference = request.cookies.get(LOCALE_PREFERENCE_COOKIE)?.value === "manual";
