@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -14,49 +14,49 @@ import { COMPASS_CATEGORIES, COMPASS_TERMS } from "@/lib/compassTerms";
 
 const TERM_TONES = {
   identity: {
-    card: "border-violet-200/14 bg-[radial-gradient(circle_at_100%_0%,rgba(167,139,250,0.105),transparent_48%),rgba(255,255,255,0.024)] hover:border-violet-200/30",
-    active: "border-violet-200/42 bg-violet-200/[0.085] ring-1 ring-violet-200/18",
-    marker: "bg-violet-300 shadow-[0_0_15px_rgba(196,181,253,0.55)]",
-    label: "text-violet-100/58",
-    detail: "border-violet-200/18 bg-[radial-gradient(circle_at_92%_2%,rgba(167,139,250,0.16),transparent_34%),linear-gradient(165deg,rgba(29,22,36,0.98),rgba(13,11,17,0.99))]",
-    badge: "border-violet-200/24 bg-violet-200/[0.09] text-violet-100/90",
+    card: "border-violet-200/18 bg-[radial-gradient(circle_at_100%_0%,rgba(139,92,246,0.20),transparent_55%),linear-gradient(145deg,rgba(39,27,68,0.92),rgba(18,20,39,0.96))] hover:border-violet-200/48 hover:bg-[#302153]",
+    active: "border-violet-200/60 bg-[radial-gradient(circle_at_92%_8%,rgba(196,181,253,0.27),transparent_45%),linear-gradient(145deg,rgba(91,61,161,0.82),rgba(37,28,69,0.98))] ring-1 ring-violet-200/30",
+    marker: "bg-violet-200 shadow-[0_0_16px_rgba(196,181,253,0.72)]",
+    label: "text-violet-100/82",
+    detail: "border-violet-200/32 bg-[radial-gradient(circle_at_92%_2%,rgba(139,92,246,0.28),transparent_38%),linear-gradient(165deg,rgba(45,30,78,0.99),rgba(16,18,39,0.99))]",
+    badge: "border-violet-200/40 bg-violet-200/[0.16] text-violet-50",
     check: "text-violet-200/88",
   },
   language: {
-    card: "border-cyan-200/14 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.095),transparent_48%),rgba(255,255,255,0.024)] hover:border-cyan-200/30",
-    active: "border-cyan-200/42 bg-cyan-200/[0.08] ring-1 ring-cyan-200/18",
-    marker: "bg-cyan-300 shadow-[0_0_15px_rgba(103,232,249,0.55)]",
-    label: "text-cyan-100/58",
-    detail: "border-cyan-200/18 bg-[radial-gradient(circle_at_92%_2%,rgba(34,211,238,0.145),transparent_34%),linear-gradient(165deg,rgba(17,28,33,0.98),rgba(11,13,17,0.99))]",
-    badge: "border-cyan-200/24 bg-cyan-200/[0.08] text-cyan-100/90",
+    card: "border-cyan-200/18 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.19),transparent_55%),linear-gradient(145deg,rgba(20,51,65,0.92),rgba(18,20,39,0.96))] hover:border-cyan-200/48 hover:bg-[#153d4c]",
+    active: "border-cyan-200/60 bg-[radial-gradient(circle_at_92%_8%,rgba(103,232,249,0.24),transparent_45%),linear-gradient(145deg,rgba(23,111,125,0.80),rgba(18,53,66,0.98))] ring-1 ring-cyan-200/30",
+    marker: "bg-cyan-200 shadow-[0_0_16px_rgba(103,232,249,0.72)]",
+    label: "text-cyan-100/82",
+    detail: "border-cyan-200/32 bg-[radial-gradient(circle_at_92%_2%,rgba(34,211,238,0.24),transparent_38%),linear-gradient(165deg,rgba(18,59,70,0.99),rgba(16,18,39,0.99))]",
+    badge: "border-cyan-200/40 bg-cyan-200/[0.16] text-cyan-50",
     check: "text-cyan-200/88",
   },
   community: {
-    card: "border-rose-200/14 bg-[radial-gradient(circle_at_100%_0%,rgba(244,114,182,0.09),transparent_48%),rgba(255,255,255,0.024)] hover:border-rose-200/30",
-    active: "border-rose-200/40 bg-rose-200/[0.075] ring-1 ring-rose-200/18",
-    marker: "bg-rose-300 shadow-[0_0_15px_rgba(249,168,212,0.5)]",
-    label: "text-rose-100/58",
-    detail: "border-rose-200/18 bg-[radial-gradient(circle_at_92%_2%,rgba(244,114,182,0.135),transparent_34%),linear-gradient(165deg,rgba(32,19,29,0.98),rgba(14,11,16,0.99))]",
-    badge: "border-rose-200/24 bg-rose-200/[0.08] text-rose-100/90",
+    card: "border-rose-200/18 bg-[radial-gradient(circle_at_100%_0%,rgba(244,114,182,0.20),transparent_55%),linear-gradient(145deg,rgba(65,25,57,0.92),rgba(22,19,37,0.96))] hover:border-rose-200/48 hover:bg-[#4c1f41]",
+    active: "border-rose-200/60 bg-[radial-gradient(circle_at_92%_8%,rgba(251,207,232,0.22),transparent_45%),linear-gradient(145deg,rgba(133,47,97,0.82),rgba(66,26,57,0.98))] ring-1 ring-rose-200/30",
+    marker: "bg-rose-200 shadow-[0_0_16px_rgba(251,113,133,0.68)]",
+    label: "text-rose-100/82",
+    detail: "border-rose-200/32 bg-[radial-gradient(circle_at_92%_2%,rgba(244,114,182,0.24),transparent_38%),linear-gradient(165deg,rgba(73,27,62,0.99),rgba(16,18,39,0.99))]",
+    badge: "border-rose-200/40 bg-rose-200/[0.16] text-rose-50",
     check: "text-rose-200/88",
   },
   allyship: {
-    card: "border-emerald-200/14 bg-[radial-gradient(circle_at_100%_0%,rgba(52,211,153,0.09),transparent_48%),rgba(255,255,255,0.024)] hover:border-emerald-200/30",
-    active: "border-emerald-200/40 bg-emerald-200/[0.075] ring-1 ring-emerald-200/18",
-    marker: "bg-emerald-300 shadow-[0_0_15px_rgba(110,231,183,0.5)]",
-    label: "text-emerald-100/58",
-    detail: "border-emerald-200/18 bg-[radial-gradient(circle_at_92%_2%,rgba(52,211,153,0.13),transparent_34%),linear-gradient(165deg,rgba(17,29,27,0.98),rgba(11,14,15,0.99))]",
-    badge: "border-emerald-200/24 bg-emerald-200/[0.08] text-emerald-100/90",
+    card: "border-emerald-200/18 bg-[radial-gradient(circle_at_100%_0%,rgba(52,211,153,0.18),transparent_55%),linear-gradient(145deg,rgba(20,57,50,0.92),rgba(18,20,39,0.96))] hover:border-emerald-200/48 hover:bg-[#17443a]",
+    active: "border-emerald-200/58 bg-[radial-gradient(circle_at_92%_8%,rgba(110,231,183,0.22),transparent_45%),linear-gradient(145deg,rgba(25,112,86,0.80),rgba(18,58,49,0.98))] ring-1 ring-emerald-200/30",
+    marker: "bg-emerald-200 shadow-[0_0_16px_rgba(110,231,183,0.68)]",
+    label: "text-emerald-100/82",
+    detail: "border-emerald-200/32 bg-[radial-gradient(circle_at_92%_2%,rgba(52,211,153,0.23),transparent_38%),linear-gradient(165deg,rgba(18,63,52,0.99),rgba(16,18,39,0.99))]",
+    badge: "border-emerald-200/40 bg-emerald-200/[0.16] text-emerald-50",
     check: "text-emerald-200/88",
   },
 };
 
 const CATEGORY_BUTTON_STYLES = {
-  all: "border-white/28 bg-white/[0.09] text-white",
-  identity: "border-violet-200/38 bg-violet-200/[0.11] text-violet-50",
-  language: "border-cyan-200/38 bg-cyan-200/[0.1] text-cyan-50",
-  community: "border-rose-200/38 bg-rose-200/[0.1] text-rose-50",
-  allyship: "border-emerald-200/38 bg-emerald-200/[0.1] text-emerald-50",
+  all: "border-white/46 bg-white/[0.14] text-white shadow-[0_6px_18px_rgba(0,0,0,0.16)]",
+  identity: "border-violet-200/60 bg-violet-300/[0.20] text-violet-50 shadow-[0_6px_18px_rgba(124,92,246,0.18)]",
+  language: "border-cyan-200/60 bg-cyan-300/[0.18] text-cyan-50 shadow-[0_6px_18px_rgba(34,211,238,0.16)]",
+  community: "border-rose-200/60 bg-rose-300/[0.18] text-rose-50 shadow-[0_6px_18px_rgba(244,114,182,0.16)]",
+  allyship: "border-emerald-200/60 bg-emerald-300/[0.18] text-emerald-50 shadow-[0_6px_18px_rgba(52,211,153,0.16)]",
 };
 
 function normalizeSearch(value) {
@@ -124,7 +124,7 @@ function CompassTermDetail({ term, detailRef, onSelectRelated }) {
           {term.name}
         </h2>
         <p className="mt-2 text-xs leading-5 text-white/42">Also found as: {term.aliases.join(" · ")}</p>
-        <p className="mt-5 text-[16px] leading-7 text-[#f7edf4] sm:text-[17px]">{term.summary}</p>
+        <p className="mt-5 text-[16px] leading-7 text-[#fff7ed]/90 sm:text-[17px]">{term.summary}</p>
       </div>
 
       <div className="space-y-6 p-5 sm:p-7">
@@ -215,16 +215,30 @@ export default function CompassClient() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [selectedSlug, setSelectedSlug] = useState("flinta");
+  const [mobilePickerOpen, setMobilePickerOpen] = useState(false);
   const detailRef = useRef(null);
+  const mobileDetailRef = useRef(null);
+  const [detailHeight, setDetailHeight] = useState(0);
   const libraryRef = useRef(null);
   const emptyRef = useRef(null);
+
+  useEffect(() => {
+    const detail = detailRef.current;
+    if (!detail) return undefined;
+
+    const updateHeight = () => setDetailHeight(Math.ceil(detail.getBoundingClientRect().height));
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(detail);
+    return () => observer.disconnect();
+  }, [selectedSlug]);
 
   function selectTerm(slug) {
     setSelectedSlug(slug);
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
       window.setTimeout(() => {
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        detailRef.current?.focus({ preventScroll: true });
+        mobileDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        mobileDetailRef.current?.focus({ preventScroll: true });
       }, 30);
     }
   }
@@ -276,8 +290,9 @@ export default function CompassClient() {
     if (match) {
       setSelectedSlug(match.slug);
       window.setTimeout(() => {
-        detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        detailRef.current?.focus({ preventScroll: true });
+        const target = window.matchMedia("(max-width: 1023px)").matches ? mobileDetailRef.current : detailRef.current;
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+        target?.focus({ preventScroll: true });
       }, 30);
       return;
     }
@@ -294,8 +309,8 @@ export default function CompassClient() {
   }
 
   return (
-    <main className="min-h-screen overflow-hidden bg-[#08070b] pb-28 text-white sm:pb-16">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[46rem] bg-[radial-gradient(circle_at_10%_3%,rgba(139,92,246,0.17),transparent_31%),radial-gradient(circle_at_88%_3%,rgba(45,212,191,0.14),transparent_30%),radial-gradient(circle_at_52%_22%,rgba(244,114,182,0.055),transparent_29%)]" />
+    <main className="min-h-screen overflow-x-hidden bg-[#0b1022] pb-28 text-white sm:pb-16">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[46rem] bg-[radial-gradient(circle_at_12%_3%,rgba(124,92,246,0.28),transparent_31%),radial-gradient(circle_at_88%_4%,rgba(34,211,238,0.20),transparent_30%),radial-gradient(circle_at_52%_22%,rgba(244,114,182,0.12),transparent_29%),linear-gradient(180deg,rgba(29,20,64,0.62),transparent_68%)]" />
 
       <div className="qa-shell relative">
         <header className="pt-5 sm:pt-10">
@@ -310,7 +325,7 @@ export default function CompassClient() {
             </span>
             Queer Dictionary · Learn without judgement
           </div>
-          <h1 className="qa-display mt-6 max-w-4xl text-[2.75rem] font-semibold leading-[0.94] tracking-[-0.055em] text-[#fff8fc] sm:text-6xl lg:text-7xl">
+          <h1 className="qa-display mt-6 max-w-4xl text-[2.75rem] font-semibold leading-[0.94] tracking-[-0.055em] text-[#fff9f0] sm:text-6xl lg:text-7xl">
             Queer Dictionary
           </h1>
           <p className="mt-5 max-w-2xl text-sm leading-7 text-white/58 sm:text-base">
@@ -326,7 +341,7 @@ export default function CompassClient() {
           <form
             role="search"
             onSubmit={handleSearchSubmit}
-            className="mt-7 flex min-h-14 max-w-3xl items-center gap-1.5 rounded-[20px] border border-cyan-100/22 bg-[linear-gradient(145deg,rgba(24,28,35,0.96),rgba(15,13,19,0.98))] p-1.5 pl-4 shadow-[0_18px_54px_rgba(0,0,0,0.28),0_0_42px_rgba(45,212,191,0.045)] focus-within:border-cyan-100/42 focus-within:ring-2 focus-within:ring-cyan-300/20"
+            className="mt-7 flex min-h-14 max-w-3xl items-center gap-1.5 rounded-[20px] border border-cyan-100/18 bg-[linear-gradient(145deg,rgba(27,31,48,0.96),rgba(18,19,32,0.98))] p-1.5 pl-4 shadow-[0_18px_54px_rgba(0,0,0,0.28),0_0_42px_rgba(45,212,191,0.035)] focus-within:border-cyan-100/42 focus-within:ring-2 focus-within:ring-cyan-300/20"
           >
             <label className="flex min-w-0 flex-1 items-center gap-3">
               <Search size={18} className="shrink-0 text-cyan-100/68" aria-hidden="true" />
@@ -370,15 +385,38 @@ export default function CompassClient() {
                 type="button"
                 aria-pressed={category === item.key}
                 onClick={() => updateCategory(item.key)}
-                className={`rounded-full border px-3.5 py-2 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${category === item.key ? CATEGORY_BUTTON_STYLES[item.key] : "border-white/10 bg-white/[0.025] text-white/48 hover:border-white/22 hover:text-white/78"}`}
+                className={`rounded-full border px-3.5 py-2 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${category === item.key ? CATEGORY_BUTTON_STYLES[item.key] : "border-white/[0.18] bg-[#151b33]/75 text-white/68 shadow-[0_4px_12px_rgba(0,0,0,0.12)] hover:border-white/38 hover:bg-[#1d2545] hover:text-white"}`}
               >
                 {item.label}
               </button>
             ))}
           </div>
 
-          <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,0.92fr)_minmax(22rem,0.78fr)] lg:items-start">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 lg:hidden">
+            <button
+              type="button"
+              aria-expanded={mobilePickerOpen}
+              aria-controls="dictionary-mobile-picker"
+              onClick={() => setMobilePickerOpen(true)}
+              className="flex w-full items-center justify-between gap-4 rounded-[20px] border border-cyan-100/28 bg-[linear-gradient(145deg,rgba(24,48,67,0.88),rgba(22,23,42,0.96))] px-4 py-3.5 text-left shadow-[0_12px_32px_rgba(0,0,0,0.22)] transition hover:border-cyan-100/48 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45"
+            >
+              <span>
+                <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/66">Currently reading</span>
+                <span className="mt-1 block text-base font-semibold text-[#fff9f0]">{selectedTerm?.name || "Choose a term"}</span>
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-100/30 bg-cyan-100/[0.10] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-50">
+                Browse terms <ArrowUpRight size={13} aria-hidden="true" />
+              </span>
+            </button>
+
+            {selectedTerm ? <div className="mt-4"><CompassTermDetail term={selectedTerm} detailRef={mobileDetailRef} onSelectRelated={selectRelatedTerm} /></div> : null}
+          </div>
+
+          <div
+            className="mt-6 hidden gap-6 lg:grid lg:grid-cols-[minmax(0,0.92fr)_minmax(22rem,0.78fr)] lg:items-start"
+            style={{ "--dictionary-detail-height": detailHeight ? `${detailHeight}px` : "calc(100dvh - 3rem)" }}
+          >
+            <div className="grid gap-3 sm:grid-cols-2 lg:max-h-[var(--dictionary-detail-height)] lg:overflow-y-auto lg:overscroll-contain lg:pr-3" aria-label="Dictionary entries">
               {filteredTerms.map((term) => {
                 const active = selectedTerm.slug === term.slug;
                 const tone = TERM_TONES[term.category] || TERM_TONES.identity;
@@ -417,9 +455,56 @@ export default function CompassClient() {
               {selectedTerm ? <CompassTermDetail term={selectedTerm} detailRef={detailRef} onSelectRelated={selectRelatedTerm} /> : null}
             </div>
           </div>
+
+          {mobilePickerOpen ? (
+            <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-labelledby="dictionary-mobile-picker-title">
+              <button type="button" aria-label="Close term picker" onClick={() => setMobilePickerOpen(false)} className="absolute inset-0 bg-[#050710]/78 backdrop-blur-sm" />
+              <section id="dictionary-mobile-picker" className="absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-hidden rounded-t-[28px] border-t border-cyan-100/24 bg-[#10172c] shadow-[0_-20px_70px_rgba(0,0,0,0.5)]">
+                <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
+                  <div>
+                    <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/66">Queer Dictionary</p>
+                    <h3 id="dictionary-mobile-picker-title" className="mt-1 text-lg font-semibold text-[#fff9f0]">Browse {filteredTerms.length} terms</h3>
+                  </div>
+                  <button type="button" onClick={() => setMobilePickerOpen(false)} className="rounded-full border border-white/16 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Close</button>
+                </div>
+                <div className="border-b border-white/10 px-4 py-3">
+                  <label className="flex items-center gap-2 rounded-xl border border-cyan-100/20 bg-black/20 px-3 py-2.5">
+                    <Search size={15} className="shrink-0 text-cyan-100/72" aria-hidden="true" />
+                    <span className="sr-only">Search dictionary terms</span>
+                    <input type="search" value={query} onChange={(event) => updateSearch(event.target.value)} placeholder="Search terms" className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/35" />
+                  </label>
+                  <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Filter terms by theme">
+                    {COMPASS_CATEGORIES.map((item) => (
+                      <button key={item.key} type="button" aria-pressed={category === item.key} onClick={() => updateCategory(item.key)} className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-medium transition ${category === item.key ? CATEGORY_BUTTON_STYLES[item.key] : "border-white/18 bg-white/[0.035] text-white/68"}`}>{item.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="max-h-[calc(78dvh-12rem)] overflow-y-auto overscroll-contain p-3">
+                  {filteredTerms.map((term) => {
+                    const active = selectedTerm?.slug === term.slug;
+                    const tone = TERM_TONES[term.category] || TERM_TONES.identity;
+                    return (
+                      <button
+                        key={term.slug}
+                        type="button"
+                        onClick={() => { setMobilePickerOpen(false); selectTerm(term.slug); }}
+                        aria-pressed={active}
+                        className={`mb-2 flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45 ${active ? tone.active : "border-white/10 bg-white/[0.035] text-white/78 hover:border-white/24"}`}
+                      >
+                        <span className={`h-2 w-2 shrink-0 rounded-full ${tone.marker}`} aria-hidden="true" />
+                        <span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{term.name}</span><span className={`mt-0.5 block text-[10px] uppercase tracking-[0.12em] ${tone.label}`}>{term.type}</span></span>
+                        <ArrowUpRight size={15} className="shrink-0 text-white/38" aria-hidden="true" />
+                      </button>
+                    );
+                  })}
+                  {filteredTerms.length === 0 ? <p className="px-3 py-8 text-center text-sm text-white/56">No terms match these filters yet.</p> : null}
+                </div>
+              </section>
+            </div>
+          ) : null}
         </section>
 
-        <section className="mt-10 rounded-[25px] border border-white/10 bg-[linear-gradient(145deg,rgba(19,16,23,0.96),rgba(11,11,15,0.98))] p-5 sm:p-7">
+        <section className="mt-10 rounded-[25px] border border-fuchsia-100/18 bg-[linear-gradient(145deg,rgba(63,31,68,0.94),rgba(19,29,52,0.98))] p-5 shadow-[0_22px_54px_rgba(0,0,0,0.2)] sm:p-7">
           <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-amber-100/58">Language keeps moving</p>
