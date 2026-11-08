@@ -1065,17 +1065,17 @@ export default function HomePageClient({ initialHomeData = null }) {
             <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#0b1020]/34 to-[#0b1020]" />
 
             <div className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col lg:min-h-[686px] xl:min-h-[690px]">
-          <div className="mb-7 flex items-center justify-end gap-3 sm:mb-14 sm:gap-4 lg:mb-0 lg:justify-between">
-            <div className="hidden items-center gap-3 lg:flex">
+          <div className="mb-5 flex items-center justify-between gap-3 sm:mb-14 sm:gap-4 lg:mb-0">
+            <div className="flex items-center gap-2.5 sm:gap-3">
               <Image
                 src="/queer-atlas-logo.png"
                 alt="Queer Atlas logo"
                 width={56}
                 height={56}
                 priority
-                className="h-12 w-12 shrink-0"
+                className="h-9 w-9 shrink-0 sm:h-12 sm:w-12"
               />
-              <div className="qa-display !text-left text-2xl font-semibold tracking-[-0.025em]">
+              <div className="qa-display !text-left text-lg font-semibold tracking-[-0.025em] sm:text-2xl">
                 <span className="text-white">Queer</span>{" "}
                 <span className="bg-gradient-to-r from-[#88d9d4] via-[#d7c0ff] to-[#f5a9c6] bg-clip-text text-transparent">
                   Atlas
@@ -1083,7 +1083,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
               <div className="relative flex h-11 shrink-0 items-center rounded-full text-white/80 transition hover:bg-white/5 focus-within:ring-2 focus-within:ring-cyan-100/80">
                 <Globe2 className="pointer-events-none absolute left-3 h-4 w-4" aria-hidden="true" />
                 <span className="pointer-events-none pl-9 pr-8 text-sm font-medium sm:hidden" aria-hidden="true">{locale.toUpperCase()}</span>
@@ -1179,7 +1179,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
           <div className="lg:flex lg:flex-1 lg:items-center">
             <section className="w-full pb-1 lg:pb-10 lg:pt-8 xl:pt-12">
-              <div className="flex items-center gap-2.5 sm:gap-3 lg:hidden">
+              <div className="hidden items-center gap-2.5 sm:gap-3 lg:hidden">
                 <Image
                   src="/queer-atlas-logo.png"
                   alt="Queer Atlas logo"
@@ -1196,7 +1196,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               </div>
 
-              <p className="qa-eyebrow mt-6 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
+              <p className="qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px]">
                 {t("home.whereverYouAre", "Wherever you are")}
               </p>
               {locale === "es" ? (
@@ -1231,7 +1231,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               )}
 
               <div className="relative z-20 mt-5 w-full max-w-[44rem] sm:mt-7">
-              <div className="relative w-full rounded-[24px] border border-cyan-100/18 bg-[linear-gradient(180deg,rgba(13,20,31,0.76),rgba(7,12,22,0.68))] p-3 shadow-[0_18px_48px_rgba(0,3,12,0.32),inset_0_1px_0_rgba(255,255,255,0.09)] backdrop-blur-lg sm:rounded-[28px] sm:p-4">
+              <div className="relative w-full sm:rounded-[28px] sm:border sm:border-cyan-100/18 sm:bg-[linear-gradient(180deg,rgba(13,20,31,0.76),rgba(7,12,22,0.68))] sm:p-4 sm:shadow-[0_18px_48px_rgba(0,3,12,0.32),inset_0_1px_0_rgba(255,255,255,0.09)] sm:backdrop-blur-lg">
                 <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search

@@ -279,9 +279,9 @@ function TrustSupportStrip({ onAction, contactSlot }) {
 export function HomeDiscoverySection({ discoveryCards = [] }) {
   const { t } = useLocale();
   return (
-    <section id="home-discovery" data-home-section="discovery" className="mt-8 scroll-mt-20">
-      <div className="relative rounded-[24px] border border-white/10 bg-[#10131c] p-4 sm:p-6">
-        <div className="relative mb-6 sm:mb-7">
+    <section id="home-discovery" data-home-section="discovery" className="mt-6 scroll-mt-20 sm:mt-8">
+      <div className="relative sm:rounded-[24px] sm:border sm:border-white/10 sm:bg-[#10131c] sm:p-6">
+        <div className="relative mb-4 sm:mb-7">
           <p className="!text-left text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/76">{t("home.exploreQueerAtlas", "Explore Queer Atlas")}</p>
           <h2 className="qa-display mt-2.5 !text-left text-2xl font-semibold tracking-[-0.035em] text-white sm:text-[2.1rem]">
             {t("home.findPrompt", "What do you want to find?")}
