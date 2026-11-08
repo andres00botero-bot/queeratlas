@@ -280,6 +280,7 @@ export default function CompassClient() {
     return groups;
   }, {}), [filteredTerms]);
   const mobileLetters = Object.keys(mobileTermGroups).sort();
+  const activeCategoryLabel = COMPASS_CATEGORIES.find((item) => item.key === category)?.label || "All";
 
 
   function updateSearch(value) {
@@ -484,14 +485,13 @@ export default function CompassClient() {
 
           {mobilePickerOpen ? (
             <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-labelledby="dictionary-mobile-picker-title">
-              <button type="button" aria-label="Close term picker" onClick={() => setMobilePickerOpen(false)} className="absolute inset-0 bg-[#050710]/78 backdrop-blur-sm" />
-              <section id="dictionary-mobile-picker" className="absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-hidden rounded-t-[28px] border-t border-cyan-100/24 bg-[#10172c] shadow-[0_-20px_70px_rgba(0,0,0,0.5)]">
+              <section id="dictionary-mobile-picker" className="absolute inset-0 flex flex-col overflow-hidden bg-[#10172c] shadow-[0_0_70px_rgba(0,0,0,0.5)]">
                 <div className="flex items-center justify-between gap-4 border-b border-white/10 px-5 py-4">
                   <div>
                     <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-cyan-100/66">Queer Dictionary</p>
-                    <h3 id="dictionary-mobile-picker-title" className="mt-1 text-lg font-semibold text-[#fff9f0]">All terms A–Z</h3>
+                    <h3 id="dictionary-mobile-picker-title" className="mt-1 text-lg font-semibold text-[#fff9f0]">{category === "all" ? "All terms A–Z" : activeCategoryLabel}</h3>
                   </div>
-                  <button type="button" onClick={() => setMobilePickerOpen(false)} className="rounded-full border border-white/16 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Close</button>
+                  <button type="button" onClick={() => setMobilePickerOpen(false)} className="rounded-full border border-white/16 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/70 transition hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/45">Back</button>
                 </div>
                 <div className="border-b border-white/10 px-4 py-3">
                   <label className="flex items-center gap-2 rounded-xl border border-cyan-100/20 bg-black/20 px-3 py-2.5">
@@ -510,7 +510,7 @@ export default function CompassClient() {
                     ))}
                   </div>
                 </div>
-                <div ref={mobileListRef} className="max-h-[calc(78dvh-14.5rem)] overflow-y-auto overscroll-contain p-3">
+                <div ref={mobileListRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
                   {mobileLetters.map((letter) => (
                     <section key={letter} data-letter={letter} className="scroll-mt-2">
                       <h4 className="sticky top-0 z-10 -mx-3 border-y border-white/8 bg-[#10172c]/95 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-100/72 backdrop-blur">{letter}</h4>
