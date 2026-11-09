@@ -13,10 +13,16 @@ function validHttpUrl(value = "") {
   }
 }
 
+function toCamelCase(key = "") {
+  return String(key).replace(/_([a-z])/g, (_, character) => character.toUpperCase());
+}
+
 function mergeIntel(fallback, existing = {}, sourceUrls = []) {
   const merged = { ...fallback };
   for (const key of Object.keys(fallback)) {
-    const candidate = cleanText(existing?.[key]);
+    // Admin drafts use camelCase while database JSON uses snake_case. Accept both
+    // so manually entered intelligence is not replaced by the generated fallback.
+    const candidate = cleanText(existing?.[key] ?? existing?.[toCamelCase(key)]);
     if (candidate) merged[key] = candidate;
   }
   const urls = [
