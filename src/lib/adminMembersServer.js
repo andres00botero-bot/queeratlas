@@ -75,5 +75,31 @@ export function createAdminMembersHandlers({ authorize, getService }) {
         return reply({ ok: true, user_id: body.user_id, trusted_contributor: body.trusted_contributor });
       } catch { return reply({ error: "update_failed" }, 503); }
     },
+    async POST(request) {
+      try {
+        const operator = await authorize(request);
+        if (!operator) return reply({ error: "forbidden" }, 403);
+        const origin = request.headers.get("origin");
+        if (origin && origin !== new URL(request.url).origin) return reply({ error: "forbidden" }, 403);
+        const body = await request.json().catch(() => null);
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body?.user_id || "") || body?.action !== "resend_confirmation" || Object.keys(body).some(key => !["user_id", "action"].includes(key))) {
+          return reply({ error: "invalid_request" }, 400);
+        }
+        const service = getService();
+        const { data: identity, error: identityError } = await service.auth.admin.getUserById(body.user_id);
+        const account = identity?.user;
+        if (identityError || !account?.email) return reply({ error: "account_not_found" }, 404);
+        if (account.email_confirmed_at) return reply({ error: "already_confirmed" }, 409);
+        const action = `admin_resend_confirmation:${account.id}`;
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const { data: recent, error: recentError } = await service.from("qa_member_privacy_audit").select("id").eq("action", action).gte("created_at", tenMinutesAgo).limit(1);
+        if (recentError) throw recentError;
+        if (recent?.length) return reply({ error: "resend_rate_limited" }, 429);
+        const { error: resendError } = await service.auth.resend({ type: "signup", email: account.email, options: { emailRedirectTo: `${new URL(request.url).origin}/privacy-settings?onboarding=1` } });
+        if (resendError) throw resendError;
+        await audit(service, operator.id, action);
+        return reply({ ok: true, user_id: account.id });
+      } catch { return reply({ error: "resend_failed" }, 503); }
+    },
   };
 }

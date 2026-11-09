@@ -10,18 +10,23 @@ const accounts = Array.from({length:1205},(_,index)=>({
 const profiles = new Map([[uid(1),{user_id:uid(1),display_name:"Keep this name",trusted_contributor:false,phone:"never return"}]]);
 const privacy = [{user_id:uid(1),audience:"hidden"}];
 const audit=[];
-let serviceAccesses=0, authorized=true, auditFails=false, authFails=false;
+let serviceAccesses=0, authorized=true, auditFails=false, authFails=false, resendCalls=0;
 const service={
-  auth:{admin:{
-    listUsers:async({page,perPage})=>authFails?{error:new Error("internal secret")}:{data:{users:accounts.slice((page-1)*perPage,page*perPage),total:accounts.length,nextPage:1}},
-    getUserById:async id=>({data:{user:accounts.find(account=>account.id===id)}}),
-  }},
+  auth:{
+    admin:{
+      listUsers:async({page,perPage})=>authFails?{error:new Error("internal secret")}:{data:{users:accounts.slice((page-1)*perPage,page*perPage),total:accounts.length,nextPage:1}},
+      getUserById:async id=>({data:{user:accounts.find(account=>account.id===id)}}),
+    },
+    resend:async()=>{resendCalls++;return {error:null};},
+  },
   from(table){
     let filter, value, operation;
     const query={
       select(){return query;},
       in(_key,ids){return Promise.resolve({data:table==="member_profiles"?[...profiles.values()].filter(row=>ids.includes(row.user_id)):privacy.filter(row=>ids.includes(row.user_id))});},
       eq(_key,id){filter=id;return query;},
+      gte(){return query;},
+      limit:async()=>({data:[],error:null}),
       maybeSingle:async()=>({data:profiles.get(filter)||null}),
       update(payload){value=payload;operation="update";return query;},
       insert(payload){
@@ -42,9 +47,11 @@ const service={
 const handlers=createAdminMembersHandlers({authorize:async()=>authorized?{id:uid(9999)}:null,getService:()=>{serviceAccesses++;return service;}});
 const get=page=>new Request(`https://atlas.test/api/admin/members?page=${page}`);
 const patch=(body,origin="https://atlas.test")=>new Request("https://atlas.test/api/admin/members",{method:"PATCH",headers:{"Content-Type":"application/json",origin},body:JSON.stringify(body)});
+const post=(body,origin="https://atlas.test")=>new Request("https://atlas.test/api/admin/members",{method:"POST",headers:{"Content-Type":"application/json",origin},body:JSON.stringify(body)});
 authorized=false;
 assert.equal((await handlers.GET(get(1))).status,403);
 assert.equal((await handlers.PATCH(patch({user_id:uid(1),trusted_contributor:true}))).status,403);
+assert.equal((await handlers.POST(post({user_id:uid(2),action:"resend_confirmation"}))).status,403);
 assert.equal(serviceAccesses,0,"No privileged reads/writes before server authorization");
 authorized=true;
 for(const page of [0,-1,1.5,"not-a-page"] )assert.equal((await handlers.GET(get(page))).status,400);
@@ -73,6 +80,9 @@ assert.equal(profiles.get(uid(1)).display_name,"Keep this name");
 assert.equal(profiles.get(uid(1)).trusted_contributor,true);
 assert.equal((await handlers.PATCH(patch({user_id:uid(2),trusted_contributor:true}))).status,200);
 assert.equal(profiles.get(uid(2)).trusted_contributor,true,"Admin can provision publishing for Auth-only accounts");
+assert.equal((await handlers.POST(post({user_id:uid(1),action:"resend_confirmation"}))).status,409,"Confirmed accounts cannot be sent a confirmation reminder");
+assert.equal((await handlers.POST(post({user_id:uid(2),action:"resend_confirmation"}))).status,200);
+assert.equal(resendCalls,1,"Only an unconfirmed account receives a confirmation resend");
 auditFails=true;
 assert.equal((await handlers.PATCH(patch({user_id:uid(1),trusted_contributor:false}))).status,503);
 assert.equal(profiles.get(uid(1)).trusted_contributor,true,"Failed audit prevents mutation");

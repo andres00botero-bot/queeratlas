@@ -8,3 +8,4 @@ const handlers = createAdminMembersHandlers({
 });
 export const GET = handlers.GET;
 export const PATCH = handlers.PATCH;
+export const POST = handlers.POST;
