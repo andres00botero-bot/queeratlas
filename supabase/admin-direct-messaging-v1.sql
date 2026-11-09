@@ -119,7 +119,11 @@ as $$
     ),
     'unread_count', (
       select count(m.id)::integer from public.qa_dm_messages m
-      where m.thread_id = t.id and m.sender_id <> auth.uid() and m.read_at is null
+      left join public.qa_dm_thread_state state
+        on state.thread_id = m.thread_id and state.user_id = auth.uid()
+      where m.thread_id = t.id
+        and m.sender_id <> auth.uid()
+        and m.created_at > coalesce(state.last_read_at, '-infinity'::timestamptz)
     )
   )
   from public.qa_dm_threads t

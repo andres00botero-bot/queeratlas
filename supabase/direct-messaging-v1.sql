@@ -303,11 +303,6 @@ begin
   on conflict on constraint qa_dm_thread_state_pkey do update
     set last_read_at = excluded.last_read_at;
 
-  update public.qa_dm_messages m
-  set read_at = now()
-  where m.thread_id = target_thread_id
-    and m.sender_id <> uid
-    and m.read_at is null;
 end;
 $$;
 
@@ -330,8 +325,10 @@ as $$
   from public.qa_dm_messages m
   join my_threads mt on mt.thread_id = m.thread_id
   join me on true
+  left join public.qa_dm_thread_state state
+    on state.thread_id = m.thread_id and state.user_id = me.uid
   where m.sender_id <> me.uid
-    and m.read_at is null;
+    and m.created_at > coalesce(state.last_read_at, '-infinity'::timestamptz);
 $$;
 
 create or replace function public.qa_get_friend_momentum(friend_limit integer default 25)
