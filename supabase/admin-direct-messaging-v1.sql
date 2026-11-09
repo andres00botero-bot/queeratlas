@@ -110,7 +110,17 @@ as $$
     'member_name', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then nullif(trim(mp.display_name), '') else null end,
     'member_email', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then u.email else null end,
     'member_city', case when public.qa_is_admin() and not public.qa_is_admin_user(u.id) then nullif(trim(mp.home_city), '') else null end,
-    'is_admin', public.qa_is_admin_user(u.id)
+    'is_admin', public.qa_is_admin_user(u.id),
+    'last_message_at', t.last_message_at,
+    'last_message_body', (
+      select m.body from public.qa_dm_messages m
+      where m.thread_id = t.id
+      order by m.created_at desc, m.id desc limit 1
+    ),
+    'unread_count', (
+      select count(m.id)::integer from public.qa_dm_messages m
+      where m.thread_id = t.id and m.sender_id <> auth.uid() and m.read_at is null
+    )
   )
   from public.qa_dm_threads t
   join auth.users u on u.id = case when t.user_a = auth.uid() then t.user_b else t.user_a end

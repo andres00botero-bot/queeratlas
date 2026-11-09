@@ -130,10 +130,12 @@ export default function FloatingHomeButton() {
       .subscribe();
 
     document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("qa:messages-read", refreshUnread);
 
     return () => {
       active = false;
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("qa:messages-read", refreshUnread);
       supabase.removeChannel(channel);
     };
   }, [isMember, user?.email, user?.id]);
