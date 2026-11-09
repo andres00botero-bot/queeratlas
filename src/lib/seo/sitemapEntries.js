@@ -59,8 +59,8 @@ function canonicalEntries(entries = []) {
   });
 }
 
-function withLanguageAlternates(entries = []) {
-  const searchReadyLocales = new Set(getSearchReadyLocales());
+function withLanguageAlternates(entries = [], { locales = getSearchReadyLocales() } = {}) {
+  const searchReadyLocales = new Set(locales);
   return entries.flatMap((entry) => {
     const englishUrl = String(entry.url || "");
     if (!englishUrl.startsWith(QA_SITE_URL)) return [];
@@ -224,11 +224,13 @@ export async function getVenueSitemapEntries() {
     listCityRegistry({ indexableOnly: true }),
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
+  // French detail pages are deliberately noindex until their editorial copy is
+  // ready. Never submit a noindex URL in an XML sitemap.
   return canonicalEntries(withLanguageAlternates(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
-  }, resolveEntityLastModified(venue)))));
+  }, resolveEntityLastModified(venue))), { locales: ["en", "es", "de"] }));
 }
 
 export async function getEventSitemapEntries() {
@@ -241,7 +243,7 @@ export async function getEventSitemapEntries() {
     url: `${QA_SITE_URL}${buildEventPath(event.city, event)}`,
     changeFrequency: "daily",
     priority: 0.76,
-  }, resolveEntityLastModified(event)))));
+  }, resolveEntityLastModified(event))), { locales: ["en", "es", "de"] }));
 }
 
 export async function getServiceSitemapEntries() {
@@ -254,5 +256,5 @@ export async function getServiceSitemapEntries() {
     url: `${QA_SITE_URL}${buildServicePath(service.city, service)}`,
     changeFrequency: "monthly",
     priority: 0.68,
-  }, resolveEntityLastModified(service)))));
+  }, resolveEntityLastModified(service))), { locales: ["en", "es", "de"] }));
 }

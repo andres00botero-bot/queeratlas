@@ -86,6 +86,21 @@ const sitemapEntries = source("src/lib/seo/sitemapEntries.js");
 assert.match(sitemapEntries, /function canonicalEntries/);
 assert.match(sitemapEntries, /url\.origin === QA_SITE_URL/);
 assert.match(sitemapEntries, /Boolean\(url\.search \|\| url\.hash\)/);
+assert.match(
+  sitemapEntries,
+  /function withLanguageAlternates\(entries = \[\], \{ locales = getSearchReadyLocales\(\) \} = \{\}\)/,
+  "Sitemap locale variants must be independently controllable.",
+);
+for (const sitemapFunction of ["getVenueSitemapEntries", "getEventSitemapEntries", "getServiceSitemapEntries"]) {
+  const start = sitemapEntries.indexOf(`export async function ${sitemapFunction}`);
+  const end = sitemapEntries.indexOf("\n}", start) + 2;
+  const sitemapFunctionSource = sitemapEntries.slice(start, end);
+  assert.match(
+    sitemapFunctionSource,
+    /locales: \["en", "es", "de"\]/,
+    `${sitemapFunction} must omit deliberate French noindex detail URLs.`,
+  );
+}
 
 for (const detailPath of [
   "src/app/[city]/venues/[slug]/page.js",
