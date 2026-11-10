@@ -96,7 +96,18 @@ export function createAdminMembersHandlers({ authorize, getService }) {
         if (recentError) throw recentError;
         if (recent?.length) return reply({ error: "resend_rate_limited" }, 429);
         const { error: resendError } = await service.auth.resend({ type: "signup", email: account.email, options: { emailRedirectTo: `${new URL(request.url).origin}/privacy-settings?onboarding=1` } });
-        if (resendError) throw resendError;
+        if (resendError) {
+          // Keep provider messages (which can contain an email address) out of
+          // the browser response, while retaining a safe diagnostic in Vercel.
+          console.error("admin_confirmation_resend_failed", {
+            code: resendError.code || null,
+            status: resendError.status || null,
+            name: resendError.name || null,
+          });
+          if (resendError.code === "email_address_not_authorized") return reply({ error: "email_delivery_not_configured" }, 422);
+          if (resendError.code === "over_email_send_rate_limit" || resendError.status === 429) return reply({ error: "provider_rate_limited" }, 429);
+          return reply({ error: "email_delivery_unavailable" }, 503);
+        }
         await audit(service, operator.id, action);
         return reply({ ok: true, user_id: account.id });
       } catch { return reply({ error: "resend_failed" }, 503); }

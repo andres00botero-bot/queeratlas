@@ -10,14 +10,14 @@ const accounts = Array.from({length:1205},(_,index)=>({
 const profiles = new Map([[uid(1),{user_id:uid(1),display_name:"Keep this name",trusted_contributor:false,phone:"never return"}]]);
 const privacy = [{user_id:uid(1),audience:"hidden"}];
 const audit=[];
-let serviceAccesses=0, authorized=true, auditFails=false, authFails=false, resendCalls=0;
+let serviceAccesses=0, authorized=true, auditFails=false, authFails=false, resendCalls=0, resendFailure=null;
 const service={
   auth:{
     admin:{
       listUsers:async({page,perPage})=>authFails?{error:new Error("internal secret")}:{data:{users:accounts.slice((page-1)*perPage,page*perPage),total:accounts.length,nextPage:1}},
       getUserById:async id=>({data:{user:accounts.find(account=>account.id===id)}}),
     },
-    resend:async()=>{resendCalls++;return {error:null};},
+    resend:async()=>{resendCalls++;return {error:resendFailure};},
   },
   from(table){
     let filter, value, operation;
@@ -83,6 +83,11 @@ assert.equal(profiles.get(uid(2)).trusted_contributor,true,"Admin can provision 
 assert.equal((await handlers.POST(post({user_id:uid(1),action:"resend_confirmation"}))).status,409,"Confirmed accounts cannot be sent a confirmation reminder");
 assert.equal((await handlers.POST(post({user_id:uid(2),action:"resend_confirmation"}))).status,200);
 assert.equal(resendCalls,1,"Only an unconfirmed account receives a confirmation resend");
+resendFailure={code:"email_address_not_authorized",status:422,name:"AuthApiError"};
+assert.equal((await handlers.POST(post({user_id:uid(4),action:"resend_confirmation"}))).status,422,"External delivery configuration failures are actionable");
+resendFailure={code:"over_email_send_rate_limit",status:429,name:"AuthApiError"};
+assert.equal((await handlers.POST(post({user_id:uid(6),action:"resend_confirmation"}))).status,429,"Provider rate limits are distinguishable from delivery failures");
+resendFailure=null;
 auditFails=true;
 assert.equal((await handlers.PATCH(patch({user_id:uid(1),trusted_contributor:false}))).status,503);
 assert.equal(profiles.get(uid(1)).trusted_contributor,true,"Failed audit prevents mutation");
