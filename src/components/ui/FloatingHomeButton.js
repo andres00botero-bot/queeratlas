@@ -101,6 +101,8 @@ export default function FloatingHomeButton() {
       }
     };
 
+    const unreadPoll = window.setInterval(refreshUnread, 12000);
+
     const channel = supabase
       .channel(`qa-floating-unread-${user.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "qa_dm_messages" }, () => {
@@ -131,11 +133,14 @@ export default function FloatingHomeButton() {
 
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("qa:messages-read", refreshUnread);
+    window.addEventListener("qa:messages-changed", refreshUnread);
 
     return () => {
       active = false;
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("qa:messages-read", refreshUnread);
+      window.removeEventListener("qa:messages-changed", refreshUnread);
+      window.clearInterval(unreadPoll);
       supabase.removeChannel(channel);
     };
   }, [isMember, user?.email, user?.id]);
