@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+function buildExpiredEventSourcePath(event = {}) {
+  const city = String(event?.city || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const name = String(event?.name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const id = String(event?.id || "").trim();
+  if (!city || !name || !id) return null;
+  return `/${city}/events/${name}--${id}`;
+}
+
 function getSupabaseServerClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
   const key =
@@ -45,15 +63,54 @@ function getExpiredEventIds(rows, todayIso) {
     .filter(Boolean);
 }
 
+function buildExpiredCityEventLifecycleRows(rows, expiredIds) {
+  const expiredIdSet = new Set(expiredIds);
+  return rows
+    .filter((row) => expiredIdSet.has(String(row?.id || "").trim()))
+    .map((row) => {
+      const sourcePath = buildExpiredEventSourcePath(row);
+      if (!sourcePath) return null;
+      const destinationPath = sourcePath.slice(0, sourcePath.lastIndexOf("/"));
+      return {
+        source_path: sourcePath,
+        destination_path: destinationPath,
+        lifecycle_status: "redirected",
+        entity_kind: "event",
+        entity_id: String(row.id),
+        entity_name: String(row?.name || "").trim(),
+        reason: "Event date passed; redirect to the current city events listing.",
+        verified_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+    })
+    .filter(Boolean);
+}
+
+async function archiveExpiredCityEventUrls(supabase, rows, expiredIds) {
+  const lifecycleRows = buildExpiredCityEventLifecycleRows(rows, expiredIds);
+  if (lifecycleRows.length === 0) return;
+
+  const { error } = await supabase
+    .from("qa_entity_url_lifecycle")
+    .upsert(lifecycleRows, { onConflict: "source_path" });
+  if (error) {
+    throw new Error(`Could not archive expired event URLs: ${error.message || "unknown error"}`);
+  }
+}
+
 async function pruneExpiredEvents(supabase, table, todayIso) {
   const { data, error } = await supabase
     .from(table)
-    .select("id,date,start_date,end_date");
+    .select("id,name,city,date,start_date,end_date");
 
   if (error) throw new Error(`Could not load ${table}: ${error.message || "unknown error"}`);
 
   const expiredIds = getExpiredEventIds(data, todayIso);
   if (expiredIds.length === 0) return 0;
+
+  if (table === "events") {
+    await archiveExpiredCityEventUrls(supabase, data, expiredIds);
+  }
 
   const { error: deleteError } = await supabase
     .from(table)

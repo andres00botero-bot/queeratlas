@@ -29,6 +29,7 @@ import {
   selectCityEventsAll,
   selectVisibleCityEvents,
 } from "../src/features/city/cityEventGuards.js";
+import { isEventExpired } from "../src/features/city/eventRailFeature.js";
 import { normalizeServicePriceTierOptions } from "../src/features/city/serviceFormUtils.js";
 import { normalizeCityKey } from "../src/features/city/checkinFeature.js";
 import { citySelectionPath } from "../src/lib/cityRouting.js";
@@ -137,6 +138,17 @@ function testCityEventSelectionUsesAllCityEventsForDeepLink() {
   assert(cityEventsAll.length === 2, "city event selection: all city events should include non-visible matches");
   assert(cityEventsVisible.length === 1, "city event selection: visible list should still filter correctly");
   assert(selected?.id === "event-old", "city event selection: deep-link eventId must resolve from all city events");
+}
+
+function testExpiredEventsExpireTheDayAfterTheirFinalDate() {
+  assert(
+    isEventExpired({ start_date: "2026-11-06", end_date: "2026-11-07" }, "2026-11-08"),
+    "event expiry: an event must expire on the day after its final date"
+  );
+  assert(
+    !isEventExpired({ start_date: "2026-11-06", end_date: "2026-11-07" }, "2026-11-07"),
+    "event expiry: an event must remain available through its final calendar day"
+  );
 }
 
 function testFavoritesCheckinListsHaveStableScrollContainers() {
@@ -990,6 +1002,7 @@ function run() {
   testCheckinFocusUsesMarkerCoordinates();
   testEventOpenIntent();
   testCityEventSelectionUsesAllCityEventsForDeepLink();
+  testExpiredEventsExpireTheDayAfterTheirFinalDate();
   testFavoritesCheckinListsHaveStableScrollContainers();
   testFavoritesUsesPlacesFallbackLoader();
   testAdminAndContributeUsePlacesFallbackLoader();

@@ -51,3 +51,11 @@ export function isEventVisibleOnCityPage(event) {
   const endOfDay = new Date(parsedEnd.getFullYear(), parsedEnd.getMonth(), parsedEnd.getDate(), 23, 59, 59, 999);
   return endOfDay.getTime() >= Date.now();
 }
+
+// Event records remain visible for their full final calendar day. On the next
+// day they are stale and must not be exposed through a detail URL either.
+export function isEventExpired(event = {}, todayIso = new Date().toISOString().slice(0, 10)) {
+  const normalized = normalizeEventRange(event);
+  const endDate = String(normalized.endDate || normalized.startDate || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(endDate) && endDate < String(todayIso).slice(0, 10);
+}

@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { cityNameFromConfig, normalizeCityKey } from "@/features/city/checkinFeature";
 import { cityPath } from "@/lib/cityRouting";
-import { normalizeEventRange } from "@/features/city/eventRailFeature";
+import { isEventExpired, normalizeEventRange } from "@/features/city/eventRailFeature";
 import { eventStatusLabel, eventStatusSchemaUrl } from "@/features/events/eventStatus";
 import {
   buildEntitySlug,
@@ -49,6 +49,44 @@ function normalizeTags(value) {
       .filter(Boolean);
   }
   return [];
+}
+
+function eventNameKey(value = "") {
+  return String(value || "")
+    .trim()
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function pickUpcomingReplacementEvent(event, cityEvents, todayIso) {
+  const nameKey = eventNameKey(event?.name);
+  if (!nameKey) return null;
+
+  return cityEvents
+    .filter((candidate) => String(candidate?.id || "") !== String(event?.id || ""))
+    .filter((candidate) => eventNameKey(candidate?.name) === nameKey)
+    .filter((candidate) => !isEventExpired(candidate, todayIso))
+    .sort((left, right) => {
+      const leftStart = String(normalizeEventRange(left).startDate || "");
+      const rightStart = String(normalizeEventRange(right).startDate || "");
+      return leftStart.localeCompare(rightStart);
+    })[0] || null;
+}
+
+async function findUpcomingReplacementEvent({ city, event, todayIso }) {
+  try {
+    const { data, error } = await supabase.from("events").select("*").eq("city", city);
+    if (error) return null;
+    const cityEvents = (await mergeSeedEventsAsync(Array.isArray(data) ? data : []))
+      .map((row) => normalizeEventRange(row || {}))
+      .filter((row) => normalizeCityKey(String(row?.city || "")) === city);
+    return pickUpcomingReplacementEvent(event, cityEvents, todayIso);
+  } catch {
+    return null;
+  }
 }
 
 function buildEventDiscoverLinks({ city, cityName, vibeTags = [] }) {
@@ -272,6 +310,14 @@ export default async function CityEventDetailPage({ params }) {
   const normalizedEvent = normalizeEventRange(event);
   const canonicalPath = buildEventPath(city, event);
   const localizedCanonicalPath = localePath(canonicalPath, locale);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  if (isEventExpired(normalizedEvent, todayIso)) {
+    const replacement = await findUpcomingReplacementEvent({ city, event, todayIso });
+    const destination = replacement
+      ? buildEventPath(city, replacement)
+      : `/${city}/events`;
+    permanentRedirect(localePath(destination, locale));
+  }
   const searchCopy = getEntitySearchCopy({ kind: "event", city, cityName, entity: normalizedEvent });
   const canonicalSlug = canonicalPath.split("/").filter(Boolean).at(-1) || "";
   if (canonicalSlug !== String(resolved?.slug || "").trim()) {
