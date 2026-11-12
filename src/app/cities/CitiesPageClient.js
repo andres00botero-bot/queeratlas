@@ -1505,7 +1505,7 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
                     />
                   )}
 
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-black/[0.12]">
                     {groupedCities[country].map((city, cityIndex) => (
                       <button
                         key={city.key}
@@ -1538,69 +1538,35 @@ export default function CitiesPageClient({ initialCities = [], initialMetrics = 
                           router.push(`/${city.key}`);
                         }}
                         aria-describedby={pendingCityKey === city.key ? `city-loading-${city.key}` : undefined}
-                        className={`group qa-premium-card relative overflow-hidden rounded-[28px] border border-white/12 px-5 py-5 text-left transition duration-300 hover:-translate-y-[3px] active:translate-y-0 disabled:cursor-wait sm:px-6 sm:py-6 ${tone.card} ${tone.hover} ${
+                        className={`group relative flex min-h-[5.5rem] w-full items-center border-b border-white/[0.07] px-4 py-3.5 text-left transition last:border-b-0 hover:bg-white/[0.045] focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/60 disabled:cursor-wait sm:min-h-[6rem] sm:px-5 sm:py-4 ${
                           city.key === lastExploredCity
-                            ? "ring-1 ring-white/28 shadow-[0_28px_92px_rgba(0,0,0,0.34),0_0_38px_rgba(186,230,253,0.07)]"
+                            ? "bg-white/[0.055]"
                             : ""
                         }`}
                       >
-                        <div className="pointer-events-none absolute -right-12 -top-12 h-28 w-28 rounded-full bg-white/8 opacity-0 blur-3xl transition duration-300 group-hover:opacity-100" />
-                        <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-300 group-hover:opacity-100 bg-gradient-to-br from-white/7 via-transparent to-transparent" />
-                        <div className="relative flex min-h-full flex-col">
-                          <div className="flex items-start justify-between gap-5">
-                            <div className="min-w-0">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/38">
-                                {city.country}
-                              </p>
-                              <h3 className={`mt-2 truncate text-[1.55rem] font-semibold tracking-[-0.035em] text-white transition duration-300 ${tone.titleHover}`}>
-                                {city.title}
-                              </h3>
-                              {city.coverageLabel ? (
-                                <p className="mt-1.5 truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-100/72">
-                                  {city.coverageLabel}
-                                </p>
-                              ) : null}
-                            </div>
-                            <span className="mt-0.5 shrink-0 text-[10px] font-medium tabular-nums tracking-[0.14em] text-white/28">
-                              {String(cityIndex + 1).padStart(2, "0")}
-                            </span>
+                        <span className={`hidden w-9 shrink-0 text-right text-[11px] font-semibold tabular-nums tracking-[0.14em] sm:block ${tone.primary}`}>
+                          {String(cityIndex + 1).padStart(2, "0")}
+                        </span>
+                        <div className="min-w-0 flex-1 sm:pl-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <h3 className={`truncate text-[17px] font-semibold tracking-[-0.02em] text-white transition sm:text-[18px] ${tone.titleHover}`}>
+                              {city.title}
+                            </h3>
+                            {city.coverageLabel ? (
+                              <span className="hidden truncate text-[9px] font-semibold uppercase tracking-[0.12em] text-cyan-100/72 sm:inline">
+                                {city.coverageLabel}
+                              </span>
+                            ) : null}
                           </div>
-
-                          <div className="mt-6 flex items-end gap-7 border-b border-white/[0.09] pb-5">
-                            <div>
-                              <p className={`text-xl font-semibold tabular-nums leading-none ${tone.primary}`}>
-                                {isLoading ? "—" : city.placeCount}
-                              </p>
-                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">{t("cities.places", "Places")}</p>
-                            </div>
-                            <div className="h-8 w-px bg-white/[0.09]" aria-hidden="true" />
-                            <div>
-                              <p className={`text-xl font-semibold tabular-nums leading-none ${tone.secondary}`}>
-                                {isEventsLoading ? "—" : city.eventCount}
-                              </p>
-                              <p className="mt-1.5 text-[9px] font-medium uppercase tracking-[0.17em] text-white/34">{t("cities.events", "Events")}</p>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 min-h-[3.25rem]">
-                            <p className="qa-clamp-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/42">
-                              {String(city.vibe || "mixed").replaceAll("_", " ")} {t("cities.atmosphere", "atmosphere")}
-                            </p>
-                            <p className="qa-clamp-1 mt-1.5 text-sm text-white/57">
-                              {city.topPlace
-                                ? `${t("cities.knownFor", "Known for")} ${city.topPlace}`
-                                : t("cities.ready", "Ready for more local discoveries")}
-                            </p>
-                          </div>
-
-                          <div className="mt-5 flex items-center justify-between pt-1">
-                            <div className={`h-px w-14 bg-gradient-to-r ${tone.line} to-transparent transition-all duration-300 group-hover:w-24`} />
-                            <span className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.17em] text-white/42 transition group-hover:text-white/78">
-                              {t("cities.explore", "Explore")}
-                              <span aria-hidden="true" className={`${tone.arrow} transition-transform duration-300 group-hover:translate-x-1`}>→</span>
-                            </span>
-                          </div>
+                          <p className="mt-1 flex min-w-0 items-center gap-1.5 truncate text-[12px] text-white/52">
+                            <span className="shrink-0">{isLoading ? "—" : city.placeCount} {t("cities.places", "Places").toLowerCase()}</span>
+                            <span className="text-white/28">·</span>
+                            <span className="shrink-0">{isEventsLoading ? "—" : city.eventCount} {t("cities.events", "Events").toLowerCase()}</span>
+                            <span className="hidden text-white/28 sm:inline">·</span>
+                            <span className="hidden truncate sm:inline">{city.topPlace ? `${t("cities.knownFor", "Known for")} ${city.topPlace}` : `${String(city.vibe || "mixed").replaceAll("_", " ")} ${t("cities.atmosphere", "atmosphere")}`}</span>
+                          </p>
                         </div>
+                        <span className="ml-3 shrink-0 text-xl text-white/28 transition group-hover:translate-x-1 group-hover:text-white/72" aria-hidden="true">→</span>
                         {pendingCityKey === city.key ? (
                           <div
                             id={`city-loading-${city.key}`}
