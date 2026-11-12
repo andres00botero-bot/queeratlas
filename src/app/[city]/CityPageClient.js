@@ -2511,6 +2511,10 @@ export default function CityPageClient() {
     const mapboxgl = mapboxGlRef.current;
     if (!mapRef.current || !mapboxgl) return;
     const useNeonMarkers = true;
+    const isVenueCategoryFiltering = activeVenueFilterValues.length > 0;
+    const visibleMapPlaces = isVenueCategoryFiltering
+      ? cityPlaces.filter((place) => activeVenueFilterValues.includes(String(place?.type || "")))
+      : cityPlaces;
 
     markersRef.current.forEach((marker) => marker.remove());
     markersRef.current = [];
@@ -2585,7 +2589,7 @@ export default function CityPageClient() {
     };
     const EVENT_MARKER_COLOR = "#ff4ec4";
 
-    cityPlaces.forEach((place) => {
+    visibleMapPlaces.forEach((place) => {
       if (!hasMapCoordinates(place)) return;
 
       const typeConfig = TYPES.find((item) => item.value === place.type);
@@ -2626,7 +2630,7 @@ export default function CityPageClient() {
       placeMarkersRef.current.set(String(place.id), marker);
     });
 
-    cityEvents.forEach((event) => {
+    (isVenueCategoryFiltering ? [] : cityEvents).forEach((event) => {
       if (!hasMapCoordinates(event)) return;
       const eventNeonColor = useNeonMarkers
         ? EVENT_MARKER_COLOR
@@ -2671,7 +2675,7 @@ export default function CityPageClient() {
       eventMarkersRef.current.set(String(event.id), marker);
     });
 
-    cityServices.forEach((service) => {
+    (isVenueCategoryFiltering ? [] : cityServices).forEach((service) => {
       if (!hasMapCoordinates(service)) return;
       const lat = Number(service.lat);
       const lng = Number(service.lng);
@@ -2718,7 +2722,7 @@ export default function CityPageClient() {
       markersRef.current.push(marker);
       serviceMarkersRef.current.set(String(service.id), marker);
     });
-  }, [city, cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
+  }, [activeVenueFilterValues, city, cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2878,6 +2882,10 @@ export default function CityPageClient() {
     const clusterZoomThreshold = QUEER_AREA_MARKER_ZOOM;
     const entitiesByKey = new Map();
     const features = [];
+    const isVenueCategoryFiltering = activeVenueFilterValues.length > 0;
+    const visibleMapPlaces = isVenueCategoryFiltering
+      ? cityPlaces.filter((place) => activeVenueFilterValues.includes(String(place?.type || "")))
+      : cityPlaces;
 
     const addEntity = (entity, kind) => {
       if (!hasMapCoordinates(entity)) return;
@@ -2893,9 +2901,11 @@ export default function CityPageClient() {
       });
     };
 
-    cityPlaces.forEach((entity) => addEntity(entity, "venue"));
-    cityEvents.forEach((entity) => addEntity(entity, "event"));
-    cityServices.forEach((entity) => addEntity(entity, "service"));
+    visibleMapPlaces.forEach((entity) => addEntity(entity, "venue"));
+    if (!isVenueCategoryFiltering) {
+      cityEvents.forEach((entity) => addEntity(entity, "event"));
+      cityServices.forEach((entity) => addEntity(entity, "service"));
+    }
 
     const data = { type: "FeatureCollection", features };
     let mounted = true;
@@ -3018,7 +3028,7 @@ export default function CityPageClient() {
         marker.getElement().style.display = "flex";
       });
     };
-  }, [cityEvents, cityPlaces, cityServices, isMapReady, openEvent, openPlace, openService]);
+  }, [activeVenueFilterValues, cityEvents, cityPlaces, cityServices, isMapReady, openEvent, openPlace, openService]);
 
   useEffect(() => {
     const useNeonMarkers = true;
