@@ -140,20 +140,20 @@ export default function CityServicesSection({
               return (
                 <section
                   key={`service-group-${group.value}`}
-                  className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border border-white/[0.07] bg-[#181426] p-5 shadow-[0_18px_46px_rgba(5,6,18,0.16)] sm:p-6"
+                  className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left qa-venue-list animate-cinematic-in mb-10 rounded-[28px] border border-white/[0.07] bg-[#181426] p-5 shadow-[0_18px_46px_rgba(5,6,18,0.16)] sm:p-6"
                   style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
                 >
                   <div className="mb-7">
-                    <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-emerald-100/70">{t("city.serviceCategory", "Service category")}</p>
+                    <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-[#d7c0ff]/70">{t("city.serviceCategory", "Service category")}</p>
                     <div className="flex flex-wrap items-end justify-between gap-3">
                       <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{serviceTypeLabels[group.value] || group.label}</h2>
-                      <span className="inline-flex items-center rounded-full border border-emerald-200/15 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/82">
+                      <span className="inline-flex items-center rounded-full bg-[#d7c0ff]/12 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#e4d6ff]">
                         {t("city.servicesCount", "{count} services").replace("{count}", items.length)}
                       </span>
                     </div>
-                    <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#34d399,#4de1ff,transparent)] opacity-60" />
+                    <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,rgba(215,192,255,0.8),rgba(215,192,255,0.16),transparent)]" />
                   </div>
-                  <div className="grid gap-4 md:grid-cols-2">{renderServiceCards(group)}</div>
+                  <div className="grid grid-cols-1 gap-0">{renderServiceCards(group)}</div>
                 </section>
               );
             })}

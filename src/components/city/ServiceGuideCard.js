@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import VibeTagChips from "@/components/ui/VibeTagChips";
-import { normalizeExternalUrl, getEntityAddressLabel } from "@/features/city/adminDrawerFeature";
-import { normalizeServiceImageUrls } from "@/features/city/cityPageUtils";
+import { ChevronRight, MapPin } from "lucide-react";
+import { getEntityAddressLabel } from "@/features/city/adminDrawerFeature";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 
 export default function ServiceGuideCard({
@@ -12,125 +10,47 @@ export default function ServiceGuideCard({
   serviceId,
   openService,
   setHoveredServiceId,
-  serviceTypeStyles,
   serviceTypeLabels,
 }) {
   const { t } = useLocale();
-  const style = serviceTypeStyles[service.type] || serviceTypeStyles.other;
-  const bookingUrl = normalizeExternalUrl(service.booking_link || service.link || "");
-  const contact = String(service.contact || "").trim();
-  const providerName = String(service.provider_name || "").trim();
-  const locationLabel = getEntityAddressLabel(service);
-  const priceTier = String(service.price_tier || "").trim();
-  const isSelectedService = String(serviceId || "") === String(service.id);
-  const serviceImages = normalizeServiceImageUrls(service.image_urls);
-  const coverImage = String(serviceImages[0] || "").trim();
+  const isSelected = String(serviceId) === String(service.id);
+  const typeLabel = serviceTypeLabels[service.type] || t("city.service", "Service");
+  const location = getEntityAddressLabel(service) || String(service.city || "").trim() || t("city.localService", "Local service");
 
   return (
-    <article
-      key={`service-${service.id}`}
+    <div
+      onClick={() => openService(service)}
       role="button"
       tabIndex={0}
-      aria-pressed={isSelectedService}
-      style={{ animationDelay: `${Math.min(index * 40, 220)}ms` }}
-      className={`qa-cinematic-hover qa-city-card qa-city-content-card qa-city-copy-left animate-rise-in rounded-[20px] border p-4 sm:p-5 ${style.card} ${
-        isSelectedService
-          ? "border-emerald-200/40 shadow-[0_16px_42px_rgba(16,185,129,0.14)]"
-          : "hover:border-emerald-200/22"
-      } cursor-pointer bg-white/[0.065] shadow-[0_18px_46px_rgba(16,185,129,0.10)]`}
+      aria-pressed={isSelected}
+      aria-label={`${t("city.openService", "Open service")}: ${service.name}`}
       onMouseEnter={() => setHoveredServiceId(String(service.id))}
       onMouseLeave={() => setHoveredServiceId(null)}
-      onClick={() => openService(service)}
       onKeyDown={(event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           openService(service);
         }
       }}
+      className="qa-cinematic-hover qa-city-card qa-city-content-card qa-venue-list-card group relative cursor-pointer py-4 pl-0 pr-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d7c0ff]/70 focus-visible:ring-inset sm:py-5"
     >
-      {coverImage && (
-        <div className="mb-4 overflow-hidden rounded-2xl border border-white/10 bg-black/35">
-          <Image
-            src={coverImage}
-            alt={`${service.name}${service.city ? ` in ${service.city}` : ""} — ${serviceTypeLabels[service.type] || t("city.queerService", "queer service")}`}
-            width={720}
-            height={420}
-            unoptimized
-            className="h-36 w-full object-cover"
-          />
-        </div>
-      )}
-      <div className={`mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r ${style.line} shadow-[0_0_22px_rgba(255,255,255,0.18)]`} />
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-lg font-semibold leading-tight tracking-[-0.01em] text-white">
+      <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+        <span className="hidden w-8 shrink-0 text-right text-[11px] font-semibold tabular-nums tracking-[0.14em] text-[#d7c0ff]/58 sm:block">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <div className="min-w-0 flex-1 text-left">
+          <h3 className="truncate text-[16px] font-semibold leading-6 tracking-[-0.012em] text-[#f7f2f7] sm:text-[17px]">
             {service.name}
           </h3>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className={`rounded-full border border-white/14 bg-white/8 px-3 py-1 text-[11px] uppercase tracking-[0.15em] ${style.label}`}>
-              {serviceTypeLabels[service.type] || t("city.service", "Service")}
-            </span>
-            {priceTier && (
-              <span className="rounded-full border border-amber-200/20 bg-amber-200/10 px-3 py-1 text-[11px] uppercase tracking-[0.15em] text-amber-100">
-                {priceTier}
-              </span>
-            )}
-          </div>
+          <p className="mt-0.5 flex min-w-0 items-center gap-1.5 truncate text-[12px] leading-5 text-[#bdb3c2]">
+            <span className="shrink-0">{typeLabel}</span>
+            <span className="text-white/42">·</span>
+            <MapPin className="h-3 w-3 shrink-0 text-[#d7c0ff]/70" aria-hidden="true" />
+            <span className="truncate">{location}</span>
+          </p>
         </div>
+        <ChevronRight className={`h-5 w-5 shrink-0 transition ${isSelected ? "text-[#e7c67f]" : "text-white/32 group-hover:translate-x-0.5 group-hover:text-[#d7c0ff]"}`} aria-hidden="true" />
       </div>
-
-      {service.description && (
-        <div className="mb-3 rounded-2xl border border-white/12 bg-white/[0.055] p-3.5">
-          <p className="line-clamp-3 text-sm leading-6 text-white/68">{String(service.description)}</p>
-        </div>
-      )}
-
-      <VibeTagChips entity={service} tone="cyan" className="mb-3" includeMixedFallback />
-
-      <div className="grid gap-2 text-xs text-white/62">
-        {providerName && (
-          <p className="rounded-xl border border-emerald-100/18 bg-emerald-300/[0.07] px-3 py-2">
-            <span className="text-white/48">{t("city.provider", "Provider:")}</span> {providerName}
-          </p>
-        )}
-        {locationLabel && (
-          <p className="rounded-xl border border-cyan-100/18 bg-cyan-300/[0.07] px-3 py-2">
-            <span className="text-white/48">{t("city.area", "Area:")}</span> {locationLabel}
-          </p>
-        )}
-        {service.hours && (
-          <p className="rounded-xl border border-amber-100/18 bg-amber-300/[0.07] px-3 py-2">
-            <span className="text-white/48">{t("city.availability", "Availability:")}</span> {String(service.hours)}
-          </p>
-        )}
-        {contact && (
-          <p className="rounded-xl border border-fuchsia-100/18 bg-fuchsia-300/[0.07] px-3 py-2">
-            <span className="text-white/48">{t("city.contact", "Contact:")}</span> {contact}
-          </p>
-        )}
-      </div>
-
-      {bookingUrl && (
-        <a
-          href={bookingUrl}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(event) => event.stopPropagation()}
-          className="qa-action qa-action-strong qa-city-cta-primary mt-4 inline-flex rounded-full border border-emerald-200/24 bg-emerald-200/10 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-emerald-100 transition hover:border-emerald-200/40"
-        >
-          {t("city.openService", "Open service")}
-        </a>
-      )}
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          openService(service);
-        }}
-        className="qa-action qa-city-cta-secondary mt-3 inline-flex rounded-full border border-white/18 bg-white/8 px-3 py-1.5 text-[11px] uppercase tracking-[0.12em] text-white/82 transition hover:border-white/30 hover:text-white"
-      >
-        {t("city.viewDetails", "View details")}
-      </button>
-    </article>
+    </div>
   );
 }
