@@ -438,6 +438,15 @@ body > div:first-child {
   --qa-city-section-accent: var(--qa-city-sea);
 }
 
+/* Services use the same category-panel hierarchy as venues on desktop. */
+@media (min-width: 1280px) {
+  .qa-services-list-root {
+    border-color: transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+}
+
 .qa-city-tone-venues {
   --qa-city-section-accent: var(--qa-city-petal);
 }

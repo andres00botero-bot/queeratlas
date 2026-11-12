@@ -43,7 +43,7 @@ export default function CityServicesSection({
   return (
     <div
       ref={sectionRef}
-      className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border p-5 sm:p-6"
+      className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left qa-services-list-root animate-cinematic-in mb-10 rounded-[28px] border p-5 sm:p-6 xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
       style={{ animationDelay: "270ms" }}
     >
       <div className="mb-7">
@@ -138,15 +138,23 @@ export default function CityServicesSection({
               const items = Array.isArray(group.items) ? group.items : [];
 
               return (
-                <div key={`service-group-${group.value}`} className="mb-6 last:mb-0" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-sm uppercase tracking-[0.16em] text-emerald-100/75">{serviceTypeLabels[group.value] || group.label}</h3>
-                    <span className="rounded-full border border-emerald-200/15 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/82">
-                      {t("city.servicesCount", "{count} services").replace("{count}", items.length)}
-                    </span>
+                <section
+                  key={`service-group-${group.value}`}
+                  className="qa-city-section qa-city-content-section qa-city-tone-services qa-city-copy-left animate-cinematic-in mb-10 rounded-[28px] border border-white/[0.07] bg-[#181426] p-5 shadow-[0_18px_46px_rgba(5,6,18,0.16)] sm:p-6"
+                  style={{ animationDelay: `${300 + groupIndex * 40}ms` }}
+                >
+                  <div className="mb-7">
+                    <p className="mb-2 text-[10px] uppercase tracking-[0.22em] text-emerald-100/70">{t("city.serviceCategory", "Service category")}</p>
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                      <h2 className="text-2xl font-semibold tracking-[-0.01em] text-white">{serviceTypeLabels[group.value] || group.label}</h2>
+                      <span className="inline-flex items-center rounded-full border border-emerald-200/15 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/82">
+                        {t("city.servicesCount", "{count} services").replace("{count}", items.length)}
+                      </span>
+                    </div>
+                    <div className="mt-3 h-px w-full bg-[linear-gradient(90deg,#34d399,#4de1ff,transparent)] opacity-60" />
                   </div>
                   <div className="grid gap-4 md:grid-cols-2">{renderServiceCards(group)}</div>
-                </div>
+                </section>
               );
             })}
           </div>
