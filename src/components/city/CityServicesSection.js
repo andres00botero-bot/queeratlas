@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ChevronDown, ConciergeBell } from "lucide-react";
 import SectionSkeleton from "@/components/city/SectionSkeleton";
 import ServiceGuideCard from "@/components/city/ServiceGuideCard";
 import { useLocale } from "@/components/i18n/LocaleProvider";
@@ -19,6 +21,25 @@ export default function CityServicesSection({
   serviceTypeStyles,
 }) {
   const { t } = useLocale();
+  const [expandedGroupValue, setExpandedGroupValue] = useState("");
+
+  const renderServiceCards = (group) => {
+    const items = Array.isArray(group.items) ? group.items : [];
+
+    return items.map((service, index) => (
+      <ServiceGuideCard
+        key={`service-${service.id}`}
+        service={service}
+        index={index}
+        serviceId={serviceId}
+        openService={openService}
+        setHoveredServiceId={setHoveredServiceId}
+        serviceTypeStyles={serviceTypeStyles}
+        serviceTypeLabels={serviceTypeLabels}
+      />
+    ));
+  };
+
   return (
     <div
       ref={sectionRef}
@@ -38,14 +59,6 @@ export default function CityServicesSection({
       <p className="mb-4 text-sm text-white/65">
         Private services curated for this city: massage, tours, concierge, and premium support lanes.
       </p>
-      <div className="mb-4 flex flex-wrap gap-2">
-        <span className="rounded-full border border-white/12 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/72">
-          {servicesLoading ? "Local categories" : `${visibleServiceGroups.length} categories`}
-        </span>
-        <span className="rounded-full border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-cyan-100/88">
-          Member-owned
-        </span>
-      </div>
 
       {servicesLoadError && (
         <div className="mb-4 rounded-2xl border border-rose-300/20 bg-rose-300/8 px-4 py-3 text-sm text-rose-100">
@@ -72,27 +85,73 @@ export default function CityServicesSection({
         </div>
       )}
 
-      {visibleServiceGroups.map((group) => (
-        <div key={`service-group-${group.value}`} className="mb-6 last:mb-0">
-          <h3 className="mb-3 text-sm uppercase tracking-[0.16em] text-emerald-100/75">
-            {serviceTypeLabels[group.value] || group.label}
-          </h3>
-          <div className="grid gap-4 md:grid-cols-2">
-            {group.items.map((service, index) => (
-              <ServiceGuideCard
-                key={`service-${service.id}`}
-                service={service}
-                index={index}
-                serviceId={serviceId}
-                openService={openService}
-                setHoveredServiceId={setHoveredServiceId}
-                serviceTypeStyles={serviceTypeStyles}
-                serviceTypeLabels={serviceTypeLabels}
-              />
-            ))}
+      {!servicesLoading && hasAnyServices && (
+        <>
+          <div className="xl:hidden">
+            <div className="mb-4 px-1.5">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-100/68">{t("city.servicesLower", "Services")}</p>
+              <h3 className="mt-1 text-[1.35rem] font-semibold tracking-[-0.02em] text-white">{t("city.chooseServiceCategory", "Choose a category")}</h3>
+              <p className="mt-1 text-xs leading-5 text-white/52">{t("city.chooseServiceCategoryHint", "Open one category at a time to keep exploring simple.")}</p>
+            </div>
+
+            <div className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#181426] shadow-[0_18px_46px_rgba(5,6,18,0.22)]">
+              {visibleServiceGroups.map((group, groupIndex) => {
+                const items = Array.isArray(group.items) ? group.items : [];
+                const isExpanded = expandedGroupValue === group.value;
+                const panelId = `service-category-${group.value}`;
+                const groupLabel = serviceTypeLabels[group.value] || group.label;
+
+                return (
+                  <div key={`service-group-${group.value}`} className={groupIndex > 0 ? "border-t border-white/[0.055]" : ""}>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedGroupValue((current) => (current === group.value ? "" : group.value))}
+                      aria-expanded={isExpanded}
+                      aria-controls={panelId}
+                      className={`qa-action flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition ${isExpanded ? "bg-[#20392f]" : "bg-transparent hover:bg-white/[0.045]"}`}
+                    >
+                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition ${isExpanded ? "bg-emerald-200/14 text-emerald-100" : "bg-white/[0.055] text-white/52"}`}>
+                        <ConciergeBell className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-semibold tracking-[-0.01em] text-white">{groupLabel}</span>
+                        <span className="mt-0.5 block text-[11px] font-medium uppercase tracking-[0.14em] text-white/46">{t("city.servicesCount", "{count} services").replace("{count}", items.length)}</span>
+                      </span>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition ${isExpanded ? "bg-emerald-200 text-[#10261d]" : "bg-white/[0.055] text-white/58"}`}>
+                        <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} aria-hidden="true" />
+                      </span>
+                    </button>
+
+                    {isExpanded ? (
+                      <div id={panelId} className="border-t border-white/[0.055] bg-black/10 p-3">
+                        <div className="grid grid-cols-1 gap-3">{renderServiceCards(group)}</div>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      ))}
+
+          <div className="hidden xl:block">
+            {visibleServiceGroups.map((group, groupIndex) => {
+              const items = Array.isArray(group.items) ? group.items : [];
+
+              return (
+                <div key={`service-group-${group.value}`} className="mb-6 last:mb-0" style={{ animationDelay: `${300 + groupIndex * 40}ms` }}>
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm uppercase tracking-[0.16em] text-emerald-100/75">{serviceTypeLabels[group.value] || group.label}</h3>
+                    <span className="rounded-full border border-emerald-200/15 bg-emerald-200/[0.08] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-emerald-100/82">
+                      {t("city.servicesCount", "{count} services").replace("{count}", items.length)}
+                    </span>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-2">{renderServiceCards(group)}</div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }
