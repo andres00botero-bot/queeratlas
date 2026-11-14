@@ -7,6 +7,7 @@ export default function CityHeroCard({
   cityName,
   placesChipLabel,
   eventsChipLabel,
+  servicesChipLabel,
   cityHero,
   heroIntro,
   mobileDiscovery = null,
@@ -47,10 +48,10 @@ export default function CityHeroCard({
       accent: "text-[#e5d9ff]",
     },
     {
-      label: t("city.signal", "Signal"),
-      value: t("city.live", "Live"),
-      dot: "bg-[#88d9d4]",
-      accent: "text-[#b8f0ed]",
+      label: t("city.servicesLower", "Services"),
+      value: servicesChipLabel,
+      dot: "bg-[#34d399]",
+      accent: "text-[#a7f3d0]",
     },
   ];
 

@@ -8,6 +8,7 @@ export default function CityTopCluster({
   cityName,
   placesChipLabel,
   eventsChipLabel,
+  servicesChipLabel,
   cityHero,
   cityHeroIntro,
   addMode,
@@ -35,6 +36,7 @@ export default function CityTopCluster({
             cityName={cityName}
             placesChipLabel={placesChipLabel}
             eventsChipLabel={eventsChipLabel}
+            servicesChipLabel={servicesChipLabel}
             cityHero={cityHero}
             heroIntro={cityHeroIntro}
             mobileDiscovery={mobileDiscovery}

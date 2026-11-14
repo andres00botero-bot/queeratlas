@@ -1398,6 +1398,11 @@ export default function CityPageClient() {
     : cityEventCount > 0
       ? `${cityEventCount} events`
       : "Events incoming";
+  const servicesChipLabel = servicesLoading
+    ? "Curated services"
+    : cityServiceCount > 0
+      ? `${cityServiceCount} services`
+      : "Services incoming";
   const todayIso = useMemo(() => {
     if (privateFeedNowTick <= 0) return "";
     return new Date(privateFeedNowTick).toISOString().slice(0, 10);
@@ -5241,6 +5246,7 @@ export default function CityPageClient() {
                 cityName={cityName}
                 placesChipLabel={placesChipLabel}
                 eventsChipLabel={eventsChipLabel}
+                servicesChipLabel={servicesChipLabel}
                 cityHero={cityHero}
                 cityHeroIntro={cityHeroIntro}
                 addMode={addMode}
