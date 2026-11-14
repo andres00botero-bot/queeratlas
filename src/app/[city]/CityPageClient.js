@@ -76,7 +76,7 @@ import {
 } from "@/features/city/cityModalStateUtils";
 import { getQualityToastConfig, resolveQualityUpdate } from "@/features/city/qualityModalFeature";
 import { formatDate, formatEventDateLabel, isEventVisibleOnCityPage, normalizeEventRange, normalizeIsoDate } from "@/features/city/eventRailFeature";
-import { isPublishedEntity, isUpcomingPublishedEvent } from "@/lib/publicInventory";
+import { isPublishedEntity } from "@/lib/publicInventory";
 import { eventStatusSchemaUrl } from "@/features/events/eventStatus";
 import {
   selectCityEventById,
@@ -1255,7 +1255,7 @@ export default function CityPageClient() {
     : cityPlaces.filter(isPublishedEntity).length;
   const cityEventCount = eventsLoading
     ? initialEntityCounts.events ?? null
-    : cityEvents.filter(isUpcomingPublishedEvent).length;
+    : cityEvents.length;
   const cityServiceCount = servicesLoading
     ? initialEntityCounts.services ?? null
     : cityServices.length;
