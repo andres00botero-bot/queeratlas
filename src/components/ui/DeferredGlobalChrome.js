@@ -18,6 +18,9 @@ const PwaInstallGate = dynamic(() => import("@/components/pwa/PwaInstallGate"), 
 const TrafficHeartbeat = dynamic(() => import("@/components/ui/TrafficHeartbeat"), {
   ssr: false,
 });
+const ProfileSetupReminder = dynamic(() => import("@/components/community/ProfileSetupReminder"), {
+  ssr: false,
+});
 
 export default function DeferredGlobalChrome() {
   const [isReady, setIsReady] = useState(false);
@@ -41,6 +44,7 @@ export default function DeferredGlobalChrome() {
           <MessageAlertGate />
           <PwaInstallGate />
           <TrafficHeartbeat />
+          <ProfileSetupReminder />
         </>
       ) : null}
     </>
