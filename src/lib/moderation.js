@@ -84,6 +84,7 @@ function mapReportRow(row) {
     reason: parsed.reason,
     message: parsed.message,
     status: row.status || "open",
+    createdByEmail: row.created_by_email || "",
     createdAt: row.created_at || new Date().toISOString(),
     resolvedAt: row.resolved_at || null,
   };
@@ -211,6 +212,7 @@ export function addReport({ targetType, targetId, city = "", title = "", reason 
     reason: String(reason || "").trim() || "No reason provided",
     message: String(message || "").trim(),
     status: "open",
+    createdByEmail: "",
     createdAt: new Date().toISOString(),
   };
 
@@ -220,6 +222,13 @@ export function addReport({ targetType, targetId, city = "", title = "", reason 
   queueMicrotask(async () => {
     const createdByEmail = await getCurrentMemberEmail();
     try {
+      if (createdByEmail) {
+        writeReportsLocal(getReports().map((entry) => (
+          String(entry.id) === String(report.id)
+            ? { ...entry, createdByEmail }
+            : entry
+        )));
+      }
       await supabase.from(REPORTS_TABLE).insert({
         id: report.id,
         target_type: report.targetType,
@@ -243,7 +252,6 @@ export function saveReports(reports) {
   writeReportsLocal(reports);
 
   queueMicrotask(async () => {
-    const createdByEmail = await getCurrentMemberEmail();
     const payload = reports.map((report) => ({
       id: String(report.id),
       target_type: report.targetType || "",
@@ -252,7 +260,7 @@ export function saveReports(reports) {
       title: report.title || null,
       reason: combineReportReason(report.reason, report.message),
       status: report.status || "open",
-      created_by_email: createdByEmail || null,
+      ...(report.createdByEmail ? { created_by_email: report.createdByEmail } : {}),
       resolved_at: report.resolvedAt || null,
     }));
 

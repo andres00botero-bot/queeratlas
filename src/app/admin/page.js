@@ -1392,6 +1392,9 @@ function AdminPageContent() {
                           {report.message}
                         </div>
                       )}
+                      <p className="mt-2 text-xs text-white/58">
+                        Reported by: <span className="font-medium text-white/82">{report.createdByEmail || "Anonymous or unavailable"}</span>
+                      </p>
                       <p className="mt-2 text-xs text-white/45">{timeAgo(report.createdAt)}</p>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center gap-2">
