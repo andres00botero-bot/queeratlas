@@ -40,8 +40,9 @@ export async function generateMetadata({ params }) {
   const canonical = buildTopicPath(hub.key);
   const cityClusterRoutes = await loadIndexableTopicHubRoutes(hub.key);
   const quality = evaluateTopicHubIndexability({ hub, routes: cityClusterRoutes });
-  const title = `${hub.title} 2026`;
-  const description = `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
+  const isPortuguese = locale === "pt";
+  const title = isPortuguese ? `${hub.title} | Guia Queer Atlas 2026` : `${hub.title} 2026`;
+  const description = isPortuguese ? `${hub.description} Compare percursos por cidade, contexto de segurança e sinais da comunidade num só guia temático.` : `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
 
   return {
     title,
@@ -111,6 +112,7 @@ function buildTopicHubFaqJsonLd({ faqEntries = [] }) {
 
 export default async function TopicHubPage({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
+  const isPortuguese = locale === "pt";
   const resolved = await params;
   const topic = String(resolved?.topic || "").trim().toLowerCase();
   const hub = getTopicHub(topic);
@@ -168,6 +170,13 @@ export default async function TopicHubPage({ params }) {
     "Check the city guide and current events before making a final plan.",
     "Save a practical backup option in the same city area.",
   ];
+  const ptSteps = ["Escolha uma rota de cidade que responda à pergunta de planeamento que tem.", "Consulte o guia da cidade e os eventos atuais antes de fechar o plano.", "Guarde uma alternativa prática na mesma zona da cidade."];
+  const journey = hub.key === "safety"
+    ? (isPortuguese ? {
+      title: "Planeie a viagem com mais contexto", intro: "Passe do contexto nacional para uma cidade, atualizações recentes e lugares que pode confirmar perto da data da viagem.",
+      cards: [{ href: "/qari", kicker: "Contexto do país", title: "Abrir o mapa QARI", description: "Leia o contexto de risco publicado e detalhes por país baseados em fontes.", accent: "amber" }, { href: "/cities", kicker: "Escolha uma cidade", title: "Comparar cidades LGBTQ+", description: "Explore a cena local e informação prática para planear.", accent: "cyan" }, { href: "/now", kicker: "Mantenha-se a par", title: "Ler as atualizações do Atlas", description: "Use notícias e contexto político recentes junto das suas próprias verificações.", accent: "violet" }]
+    } : { title: "Make a more informed travel plan", intro: "Move from country context to a city, current updates, and places you can verify close to your trip.", cards: [{ href: "/qari", kicker: "Country context", title: "Open the QARI map", description: "Read published risk context and source-led country detail.", accent: "amber" }, { href: "/cities", kicker: "Choose a city", title: "Compare LGBTQ-Friendly Cities", description: "Explore city-level scene and planning information.", accent: "cyan" }, { href: "/now", kicker: "Stay current", title: "Read the latest Atlas updates", description: "Use current news and policy context alongside your own checks.", accent: "violet" }] })
+    : (isPortuguese ? { title: "Transforme uma saída num plano que funciona", intro: "Passe da vontade de sair para uma cidade, eventos recentes e uma alternativa prática.", cards: [{ href: "/cities", kicker: "Escolha uma cidade", title: "Abrir um guia de vida noturna", description: "Comece pelo contexto dos bairros, lugares e sinais da cena local.", accent: "cyan" }, { href: "/events", kicker: "Escolha uma data", title: "Encontrar eventos e datas Pride", description: "Acrescente ao seu percurso o que acontece agora ou a seguir.", accent: "fuchsia" }, { href: "/gay-guide", kicker: "Aprofunde", title: "Criar um roteiro de viagem queer", description: "Use o contexto de cidades, locais e eventos para uma viagem mais completa.", accent: "amber" }] } : { title: "Turn a night out into a workable plan", intro: "Move from nightlife intent to a city, current events, and a practical fallback.", cards: [{ href: "/cities", kicker: "Choose a city", title: "Open a city nightlife guide", description: "Start with neighbourhood context, places, and local scene signal.", accent: "cyan" }, { href: "/events", kicker: "Choose a date", title: "Find events and Pride dates", description: "Add what is happening now or next to your route.", accent: "fuchsia" }, { href: "/gay-guide", kicker: "Go deeper", title: "Build a gay travel route", description: "Use city, venue, and event context for a fuller trip plan.", accent: "amber" }] });
 
   return (
     <main className="min-h-screen bg-[#050505] px-4 py-8 text-white sm:px-6">
@@ -177,21 +186,21 @@ export default async function TopicHubPage({ params }) {
       <div className="mx-auto max-w-5xl space-y-6">
         <section className="relative overflow-hidden rounded-[30px] border border-cyan-100/16 bg-[radial-gradient(circle_at_12%_0%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_88%_15%,rgba(244,114,182,0.13),transparent_30%),linear-gradient(145deg,rgba(19,23,33,0.98),rgba(6,7,12,0.99))] p-6 shadow-[0_28px_80px_rgba(0,0,0,0.32)] sm:p-8">
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-cyan-100/40 to-transparent" />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100/78">{hub.eyebrow || "Queer Atlas discovery guide"}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-100/78">{isPortuguese ? "Guia de descoberta Queer Atlas" : (hub.eyebrow || "Queer Atlas discovery guide")}</p>
           <h1 className="qa-display mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.035em] text-white sm:text-5xl">{hub.title}</h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-white/78 sm:text-base">{hub.description}</p>
           <div className="mt-6 flex flex-wrap gap-2 text-xs text-white/72">
-            <span className="rounded-full border border-white/16 bg-white/[0.06] px-3 py-1.5">{selectedCitiesCount} cities to compare</span>
-            <span className="rounded-full border border-white/16 bg-white/[0.06] px-3 py-1.5">{cityClusterRoutes.length} live route paths</span>
-            <Link href="/events" className="rounded-full border border-cyan-100/28 bg-cyan-100/[0.09] px-3 py-1.5 text-cyan-50 transition hover:border-cyan-100/45">Check events</Link>
+            <span className="rounded-full border border-white/16 bg-white/[0.06] px-3 py-1.5">{selectedCitiesCount} {isPortuguese ? "cidades para comparar" : "cities to compare"}</span>
+            <span className="rounded-full border border-white/16 bg-white/[0.06] px-3 py-1.5">{cityClusterRoutes.length} {isPortuguese ? "percursos ativos" : "live route paths"}</span>
+            <Link href="/events" className="rounded-full border border-cyan-100/28 bg-cyan-100/[0.09] px-3 py-1.5 text-cyan-50 transition hover:border-cyan-100/45">{isPortuguese ? "Ver eventos" : "Check events"}</Link>
           </div>
         </section>
 
         <section className="rounded-[26px] border border-white/12 bg-[linear-gradient(145deg,rgba(255,255,255,0.055),rgba(255,255,255,0.018))] p-5 sm:p-6">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/68">Make the next decision easier</p>
-          <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.025em] text-white">{hub.decisionTitle || "Plan with practical context"}</h2>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-fuchsia-100/68">{isPortuguese ? "Torne a próxima decisão mais simples" : "Make the next decision easier"}</p>
+          <h2 className="qa-display mt-2 text-2xl font-semibold tracking-[-0.025em] text-white">{isPortuguese ? "Planeie com contexto prático" : (hub.decisionTitle || "Plan with practical context")}</h2>
           <ol className="mt-5 grid gap-3 md:grid-cols-3">
-            {decisionSteps.map((step, index) => (
+            {(isPortuguese ? ptSteps : decisionSteps).map((step, index) => (
               <li key={step} className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm leading-6 text-white/76">
                 <span className="mb-3 grid h-7 w-7 place-items-center rounded-full border border-fuchsia-100/26 bg-fuchsia-100/[0.08] text-xs font-semibold text-fuchsia-50">0{index + 1}</span>
                 {step}
@@ -201,41 +210,31 @@ export default async function TopicHubPage({ params }) {
         </section>
 
         <JourneyDeck
-          title={hub.key === "safety" ? "Make a more informed travel plan" : "Turn a night out into a workable plan"}
-          intro={hub.key === "safety" ? "Move from country context to a city, current updates, and places you can verify close to your trip." : "Move from nightlife intent to a city, current events, and a practical fallback."}
-          cards={hub.key === "safety"
-            ? [
-                { href: "/qari", kicker: "Country context", title: "Open the QARI map", description: "Read published risk context and source-led country detail.", accent: "amber" },
-                { href: "/cities", kicker: "Choose a city", title: "Compare LGBTQ-Friendly Cities", description: "Explore city-level scene and planning information.", accent: "cyan" },
-                { href: "/now", kicker: "Stay current", title: "Read the latest Atlas updates", description: "Use current news and policy context alongside your own checks.", accent: "violet" },
-              ]
-            : [
-                { href: "/cities", kicker: "Choose a city", title: "Open a city nightlife guide", description: "Start with neighbourhood context, places, and local scene signal.", accent: "cyan" },
-                { href: "/events", kicker: "Choose a date", title: "Find events and Pride dates", description: "Add what is happening now or next to your route.", accent: "fuchsia" },
-                { href: "/gay-guide", kicker: "Go deeper", title: "Build a gay travel route", description: "Use city, venue, and event context for a fuller trip plan.", accent: "amber" },
-              ]}
+          title={journey.title}
+          intro={journey.intro}
+          cards={journey.cards}
         />
 
         <section className="rounded-[24px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-6">
-          <h2 className="text-lg font-semibold text-cyan-50">What this guide can — and cannot — tell you</h2>
+          <h2 className="text-lg font-semibold text-cyan-50">{isPortuguese ? "O que este guia pode — e não pode — dizer" : "What this guide can — and cannot — tell you"}</h2>
           <p className="mt-2 text-sm leading-7 text-cyan-50/84">
-            This guide maps {cityClusterRoutes.length} city-topic routes across {selectedCitiesCount} cities. It helps you find a useful starting point; availability, entry rules, safety conditions, and event details can change. For source standards, open reports; for current updates, use <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link>.
+            {isPortuguese ? <>Este guia reúne {cityClusterRoutes.length} percursos temáticos em {selectedCitiesCount} cidades. Ajuda a encontrar um bom ponto de partida; disponibilidade, regras de entrada, condições de segurança e detalhes de eventos podem mudar. Para critérios de fontes, abra os relatórios; para atualizações, use <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Agora</Link>.</> : <>This guide maps {cityClusterRoutes.length} city-topic routes across {selectedCitiesCount} cities. It helps you find a useful starting point; availability, entry rules, safety conditions, and event details can change. For source standards, open reports; for current updates, use <Link href="/now" className="underline decoration-cyan-200/50 underline-offset-2">Now</Link>.</>}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <Link href="/community-policy" className="rounded-full border border-white/20 bg-white/8 px-3 py-1 text-white/84 transition hover:border-white/34 hover:text-white">
-              Moderation policy
+              {isPortuguese ? "Política de moderação" : "Moderation policy"}
             </Link>
             <Link href="/topics" className="rounded-full border border-cyan-200/28 bg-cyan-200/12 px-3 py-1 text-cyan-50 transition hover:border-cyan-100/45">
-              All topic hubs
+              {isPortuguese ? "Todos os temas" : "All topic hubs"}
             </Link>
             <Link href="/reports" className="rounded-full border border-fuchsia-200/28 bg-fuchsia-200/12 px-3 py-1 text-fuchsia-100 transition hover:border-fuchsia-100/45">
-              Open reports
+              {isPortuguese ? "Abrir relatórios" : "Open reports"}
             </Link>
           </div>
         </section>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
-          <h2 className="text-lg font-semibold">City Cluster Routes</h2>
+          <h2 className="text-lg font-semibold">{isPortuguese ? "Percursos por cidade" : "City Cluster Routes"}</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {cityClusterRoutes.map((route) => (
               <Link
@@ -250,7 +249,7 @@ export default async function TopicHubPage({ params }) {
         </section>
 
         <section className="rounded-[24px] border border-white/12 bg-white/[0.03] p-6">
-          <h2 className="text-lg font-semibold">FAQ</h2>
+          <h2 className="text-lg font-semibold">{isPortuguese ? "Perguntas frequentes" : "FAQ"}</h2>
           <div className="mt-3 space-y-4">
             {faqEntries.map((entry) => (
               <article key={entry.question} className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">

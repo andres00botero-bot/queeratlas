@@ -267,6 +267,28 @@ function SearchResultSkeleton({ tone = "rose" }) {
 export default function SearchPage() {
   const router = useRouter();
   const { t } = useLocale();
+  const typeLabel = (type, { plural = false } = {}) => {
+    const key = plural ? `search.types.${type}` : `search.type.${type}`;
+    const fallback = getTypeLabel(type, { plural });
+    return t(key, fallback);
+  };
+  const matchReason = (item, queryValue) => {
+    if (Number.isFinite(Number(item?.distanceKm))) {
+      const distance = Number(item.distanceKm);
+      return distance < 1
+        ? t("search.distanceMeters", "{distance} m away").replace("{distance}", Math.max(50, Math.round((distance * 1000) / 50) * 50))
+        : t("search.distanceKilometers", "{distance} km away").replace("{distance}", distance < 10 ? distance.toFixed(1) : Math.round(distance));
+    }
+    if (item?.searchSignals?.matchedCity && item?.searchSignals?.matchedPlaceType) return t("search.matchesCityType", "Matches city + {type}").replace("{type}", item.searchSignals.matchedPlaceTypeLabel || t("search.venueType", "venue type"));
+    const needle = normalizeValue(queryValue);
+    const name = normalizeValue(getItemDisplayName(item));
+    if (!needle || !name) return t("search.strongMatch", "A strong match for this search");
+    if (name === needle) return t("search.exactNameMatch", "Exact name match");
+    if (name.startsWith(needle)) return t("search.nameStartsMatch", "Name starts with your query");
+    if (name.includes(` ${needle}`)) return t("search.wordMatch", "Strong word-level match");
+    if (name.includes(needle)) return t("search.nameContainsMatch", "Name contains your query");
+    return t("search.strongMatch", "A strong match for this search");
+  };
   const hasHydrated = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -381,7 +403,7 @@ export default function SearchPage() {
         const nextMeta = payload?.meta || {};
         setResults(nextResults);
         setSearchMeta(nextMeta);
-        if (nextMeta.partialData) setLoadError("Some live listings could not be loaded. The available matches are shown.");
+        if (nextMeta.partialData) setLoadError(t("search.partialResults", "Some live listings could not be loaded. The available matches are shown."));
 
         const queryLength = cleanQuery.length;
         const lengthBucket = queryLength < 8 ? "short" : queryLength < 24 ? "medium" : "long";
@@ -403,7 +425,7 @@ export default function SearchPage() {
       } catch (error) {
         if (error?.name === "AbortError") return;
         setResults(EMPTY_SEARCH_RESULTS);
-        setLoadError("Search is temporarily unavailable.");
+        setLoadError(t("search.unavailable", "Search is temporarily unavailable."));
         trackKpiEvent("atlas_search_failed", {
           targetType: "search",
           meta: {
@@ -417,7 +439,7 @@ export default function SearchPage() {
 
     loadResults();
     return () => controller.abort();
-  }, [cityFilter, deferredQuery, searchRetryNonce, typeFilter]);
+  }, [cityFilter, deferredQuery, searchRetryNonce, t, typeFilter]);
 
   useEffect(() => {
     const cleanQuery = query.trim();
@@ -517,10 +539,10 @@ export default function SearchPage() {
       String(formatVibeTagLabel(a) || a).localeCompare(String(formatVibeTagLabel(b) || b))
     );
     return [
-      { value: "all", label: "All vibes" },
+      { value: "all", label: t("search.allVibes", "All vibes") },
       ...keys.map((key) => ({ value: key, label: formatVibeTagLabel(key) || key })),
     ];
-  }, [results.all]);
+  }, [results.all, t]);
 
   const filteredAll = useMemo(() => {
     if (intentProfile.flags?.nearby && !userLocation) return [];
@@ -643,7 +665,7 @@ export default function SearchPage() {
   }, [activeQuery, filteredAll, intentProfile.detectedCity]);
   const hotspotRows = useMemo(() => {
     const counts = searchMapPoints.reduce((acc, point) => {
-      const key = String(point.city || "Global");
+      const key = String(point.city || t("search.global", "Global"));
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
@@ -651,7 +673,7 @@ export default function SearchPage() {
       .map(([city, count]) => ({ city, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-  }, [searchMapPoints]);
+  }, [searchMapPoints, t]);
   const shouldShowDesktopMap =
     isDesktopSplit && Boolean(activeQuery.trim()) && !isLoading && searchMapPoints.length > 0;
   const showSearchMap = Boolean(activeQuery.trim()) && searchMapPoints.length > 0;
@@ -683,11 +705,11 @@ export default function SearchPage() {
   }, [searchMapFeatureCollection, searchMapPoints]);
   const sectionOrder = useMemo(() => {
     const sections = [
-      { key: "city", label: "Cities", tone: "cyan", items: filteredResults.cities },
-      { key: "place", label: "Venues", tone: "rose", items: filteredResults.places },
-      { key: "event", label: "Events", tone: "violet", items: filteredResults.events },
-      { key: "service", label: "Services", tone: "emerald", items: filteredResults.services },
-      { key: "guide", label: "Guides", tone: "amber", items: filteredResults.guides },
+      { key: "city", label: t("search.types.city", "Cities"), tone: "cyan", items: filteredResults.cities },
+      { key: "place", label: t("search.types.place", "Venues"), tone: "rose", items: filteredResults.places },
+      { key: "event", label: t("search.types.event", "Events"), tone: "violet", items: filteredResults.events },
+      { key: "service", label: t("search.types.service", "Services"), tone: "emerald", items: filteredResults.services },
+      { key: "guide", label: t("search.types.guide", "Guides"), tone: "amber", items: filteredResults.guides },
     ];
 
     return sections
@@ -699,6 +721,7 @@ export default function SearchPage() {
     filteredResults.guides,
     filteredResults.places,
     filteredResults.services,
+    t,
   ]);
 
   const activeFilterCount = [cityFilter !== "all", vibeFilter !== "all", qualityFilter !== "all"].filter(
@@ -809,15 +832,16 @@ export default function SearchPage() {
         };
         setUserLocation(nextLocation);
         setLocationStatus("ready");
-        setQuery("Near me");
-        setCommittedQuery("Near me");
+        const nearbyQuery = t("search.nearMe", "Near me");
+        setQuery(nearbyQuery);
+        setCommittedQuery(nearbyQuery);
         setTypeFilter("all");
         setCityFilter("all");
         setVibeFilter("all");
         setQualityFilter("all");
         setMobileView("list");
         setIsSuggestionsDismissed(true);
-        rememberSearch("Near me");
+        rememberSearch(nearbyQuery);
         pendingResultsScrollRef.current = true;
         router.replace("/search?q=near%20me", { scroll: false });
       },
@@ -827,7 +851,7 @@ export default function SearchPage() {
       },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
     );
-  }, [rememberSearch, router]);
+  }, [rememberSearch, router, t]);
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return undefined;
     const media = window.matchMedia("(min-width: 1280px)");
@@ -865,9 +889,9 @@ export default function SearchPage() {
         });
         if (!readiness.ready) {
           if (readiness.reason === "token_missing") {
-            setSearchMapError("Map token missing. Add NEXT_PUBLIC_MAPBOX_TOKEN to enable explore map.");
+            setSearchMapError(t("search.mapTokenMissing", "Map token missing. Add NEXT_PUBLIC_MAPBOX_TOKEN to enable explore map."));
           } else if (readiness.reason === "webgl_unsupported") {
-            setSearchMapError("WebGL not supported on this device.");
+            setSearchMapError(t("search.webglUnsupported", "WebGL not supported on this device."));
           }
           return;
         }
@@ -983,8 +1007,8 @@ export default function SearchPage() {
           map.on("click", SEARCH_MAP_POINT_LAYER_ID, (event) => {
             const feature = event?.features?.[0];
             if (!feature) return;
-            const title = String(feature.properties?.title || "Result");
-            const city = String(feature.properties?.city || "Global");
+            const title = String(feature.properties?.title || t("search.mapResultFallback", "Result"));
+            const city = String(feature.properties?.city || t("search.global", "Global"));
             new mapboxgl.Popup({ offset: 12, closeButton: false })
               .setLngLat(feature.geometry.coordinates)
               .setHTML(`<div style="font-size:12px;color:#e2e8f0"><strong>${title}</strong><br/>${city}</div>`)
@@ -992,7 +1016,7 @@ export default function SearchPage() {
           });
         });
       } catch {
-        setSearchMapError("Could not initialize explore map.");
+        setSearchMapError(t("search.mapInitError", "Could not initialize explore map."));
       }
     };
 
@@ -1001,7 +1025,7 @@ export default function SearchPage() {
     return () => {
       cancelled = true;
     };
-  }, [isDesktopSplit, isMapboxStylesReady, mapboxToken, shouldInitializeSearchMap]);
+  }, [isDesktopSplit, isMapboxStylesReady, mapboxToken, shouldInitializeSearchMap, t]);
 
   useEffect(() => {
     const map = searchMapRef.current;
@@ -1136,7 +1160,7 @@ export default function SearchPage() {
                           ) : null}
                         </span>
                         <span className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/65">
-                          {suggestion.typeFilter === "all" ? t("search.searchAction", "Search") : getTypeLabel(suggestion.typeFilter)}
+                          {suggestion.typeFilter === "all" ? t("search.searchAction", "Search") : typeLabel(suggestion.typeFilter)}
                         </span>
                       </li>
                     );
@@ -1181,7 +1205,7 @@ export default function SearchPage() {
           )}
           {activeQuery.trim() ? (
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-3">
-            <div className="flex flex-wrap gap-2" aria-label="Result type">
+            <div className="flex flex-wrap gap-2" aria-label={t("search.resultType", "Result type")}>
                 {TYPE_FILTERS.map((item) => (
                   <button
                     key={item}
@@ -1194,7 +1218,7 @@ export default function SearchPage() {
                         : `${TYPE_FILTER_IDLE_TONES[item]} text-white/68 hover:text-white`
                     }`}
                   >
-                    {item === "all" ? "All" : getTypeLabel(item, { plural: true })}
+                    {item === "all" ? t("search.all", "All") : typeLabel(item, { plural: true })}
                   </button>
                 ))}
             </div>
@@ -1205,7 +1229,7 @@ export default function SearchPage() {
               className="inline-flex items-center gap-2 rounded-full border border-cyan-200/20 bg-[linear-gradient(135deg,rgba(34,211,238,0.08),rgba(139,92,246,0.08))] px-3 py-1.5 text-xs text-cyan-50/78 transition hover:border-cyan-200/36 hover:text-white"
             >
               <SlidersHorizontal size={14} />
-              Filters{activeFilterCount ? ` (${activeFilterCount})` : ""}
+              {t("search.filters", "Filters")}{activeFilterCount ? ` (${activeFilterCount})` : ""}
               <ChevronDown size={13} className={`transition ${isFiltersOpen ? "rotate-180" : ""}`} />
             </button>
           </div>
@@ -1213,9 +1237,9 @@ export default function SearchPage() {
 
           {activeQuery.trim() && (searchMeta.cityMatch === "corrected" || intentProfile.flags?.tonight || intentProfile.flags?.safe || hasIdentityIntent) ? (
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-cyan-50/72" aria-live="polite">
-              {searchMeta.cityMatch === "corrected" && searchMeta.city ? <span>Showing results for {searchMeta.city}.</span> : null}
-              {intentProfile.flags?.tonight && searchMeta.city ? <span>Tonight follows local time in {searchMeta.city}.</span> : null}
-              {(intentProfile.flags?.safe || hasIdentityIntent) ? <span>Available safety and inclusion context is included in the match.</span> : null}
+              {searchMeta.cityMatch === "corrected" && searchMeta.city ? <span>{t("search.correctedCity", "Showing results for {city}.").replace("{city}", searchMeta.city)}</span> : null}
+              {intentProfile.flags?.tonight && searchMeta.city ? <span>{t("search.tonightLocalTime", "Tonight follows local time in {city}.").replace("{city}", searchMeta.city)}</span> : null}
+              {(intentProfile.flags?.safe || hasIdentityIntent) ? <span>{t("search.safetyContext", "Available safety and inclusion context is included in the match.")}</span> : null}
             </div>
           ) : null}
 
@@ -1223,9 +1247,9 @@ export default function SearchPage() {
           <div className="mt-3 grid grid-cols-1 gap-2 rounded-2xl border border-violet-200/14 bg-[linear-gradient(135deg,rgba(50,25,70,0.26),rgba(3,17,24,0.42))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] sm:grid-cols-3 sm:gap-3">
 
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">City</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">{t("search.cityFilter", "City")}</p>
               <label htmlFor="search-city-filter" className="sr-only">
-                Filter by city
+                {t("search.filterByCity", "Filter by city")}
               </label>
               <select
                 id="search-city-filter"
@@ -1235,16 +1259,16 @@ export default function SearchPage() {
               >
                 {cityOptions.map((city) => (
                   <option key={city} value={city}>
-                    {city === "all" ? "All cities" : city}
+                    {city === "all" ? t("search.allCities", "All cities") : city}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Vibe</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">{t("search.vibe", "Vibe")}</p>
               <label htmlFor="search-vibe-filter" className="sr-only">
-                Filter by vibe
+                {t("search.filterByVibe", "Filter by vibe")}
               </label>
               <select
                 id="search-vibe-filter"
@@ -1261,9 +1285,9 @@ export default function SearchPage() {
             </div>
 
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">Information</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-white/40">{t("search.information", "Information")}</p>
               <label htmlFor="search-quality-filter" className="sr-only">
-                Filter by quality
+                {t("search.filterByQuality", "Filter by quality")}
               </label>
               <select
                 id="search-quality-filter"
@@ -1274,10 +1298,10 @@ export default function SearchPage() {
                 {QUALITY_FILTERS.map((quality) => (
                   <option key={quality} value={quality}>
                     {quality === "all"
-                      ? "All information"
+                      ? t("search.allInformation", "All information")
                       : quality === "verified"
-                        ? "Recently checked"
-                        : "Needs a current check"}
+                        ? t("search.recentlyChecked", "Recently checked")
+                        : t("search.needsCurrentCheck", "Needs a current check")}
                   </option>
                 ))}
               </select>
@@ -1300,7 +1324,7 @@ export default function SearchPage() {
                 onClick={() => setSearchRetryNonce((current) => current + 1)}
                 className="mt-2 rounded-full border border-rose-200/25 bg-rose-200/10 px-3 py-1 text-[11px] text-rose-100 transition hover:border-rose-200/40"
               >
-                Retry
+                {t("search.retry", "Retry")}
               </button>
             </div>
           )}
@@ -1309,7 +1333,7 @@ export default function SearchPage() {
         {!activeQuery.trim() && recentSearches.length > 0 ? (
           <section aria-labelledby="recent-searches-heading" className="mb-5 flex flex-wrap items-center gap-2 px-1">
             <p id="recent-searches-heading" className="mr-1 text-[11px] uppercase tracking-[0.16em] text-white/44">
-              Recent
+              {t("search.recent", "Recent")}
             </p>
             {recentSearches.map((item) => (
               <button
@@ -1329,15 +1353,15 @@ export default function SearchPage() {
               }}
               className="ml-auto px-2 py-1 text-[11px] text-white/42 transition hover:text-white/72"
             >
-              Clear
+              {t("search.clear", "Clear")}
             </button>
           </section>
         ) : null}
 
         {activeQuery.trim() && showSearchMap ? (
           <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-violet-200/20 bg-[linear-gradient(120deg,rgba(236,72,153,0.10),rgba(139,92,246,0.11),rgba(6,182,212,0.10))] p-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.055)] xl:hidden">
-            <p className="pl-2 text-xs text-white/56">View results</p>
-            <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-black/35 p-1" aria-label="Result view">
+            <p className="pl-2 text-xs text-white/56">{t("search.viewResults", "View results")}</p>
+            <div className="grid grid-cols-2 rounded-xl border border-white/10 bg-black/35 p-1" aria-label={t("search.resultView", "Result view")}>
               <button
                 type="button"
                 onClick={() => setMobileView("list")}
@@ -1346,7 +1370,7 @@ export default function SearchPage() {
                   mobileView === "list" ? "bg-fuchsia-200/16 text-fuchsia-50 shadow-sm" : "text-white/52"
                 }`}
               >
-                <List size={14} /> List
+                <List size={14} /> {t("search.list", "List")}
               </button>
               <button
                 type="button"
@@ -1356,7 +1380,7 @@ export default function SearchPage() {
                   mobileView === "map" ? "bg-cyan-200/18 text-cyan-50 shadow-sm" : "text-white/52"
                 }`}
               >
-                <Map size={14} /> Map
+                <Map size={14} /> {t("search.map", "Map")}
               </button>
             </div>
           </div>
@@ -1365,8 +1389,8 @@ export default function SearchPage() {
         {activeQuery.trim() && showSearchMap && mobileView === "map" ? (
           <section aria-labelledby="mobile-search-map-heading" className="mb-5 overflow-hidden rounded-[24px] border border-cyan-300/16 bg-[#080c12] xl:hidden">
             <div className="border-b border-white/10 px-4 py-3">
-              <h2 id="mobile-search-map-heading" className="text-sm font-semibold text-white">Results on the map</h2>
-              <p className="mt-1 text-xs text-white/58">Showing the locations that match this search.</p>
+              <h2 id="mobile-search-map-heading" className="text-sm font-semibold text-white">{t("search.mapResultsTitle", "Results on the map")}</h2>
+              <p className="mt-1 text-xs text-white/58">{t("search.mapResultsIntro", "Showing the locations that match this search.")}</p>
             </div>
             <div className="h-[min(62vh,32rem)] min-h-[22rem] w-full bg-black/40">
               <div ref={mobileSearchMapContainerRef} className="h-full w-full" />
@@ -1383,13 +1407,13 @@ export default function SearchPage() {
         {activeQuery.trim() && (
           <section aria-labelledby="search-results-heading" className="relative mb-4 overflow-hidden rounded-[20px] border border-violet-200/22 bg-[radial-gradient(circle_at_0%_0%,rgba(244,114,182,0.18),transparent_34%),radial-gradient(circle_at_100%_100%,rgba(34,211,238,0.10),transparent_32%),linear-gradient(145deg,rgba(24,15,34,0.96),rgba(5,15,22,0.98))] px-4 py-3 shadow-[0_18px_55px_rgba(0,0,0,0.27),inset_0_1px_0_rgba(255,255,255,0.06)]">
             <div aria-hidden="true" className="absolute bottom-0 left-4 right-4 h-px bg-gradient-to-r from-pink-300/55 via-violet-300/38 to-cyan-300/55" />
-            <p className="text-[11px] uppercase tracking-[0.16em] text-pink-100/72">Your search</p>
+            <p className="text-[11px] uppercase tracking-[0.16em] text-pink-100/72">{t("search.yourSearch", "Your search")}</p>
             <div className="mt-1 flex flex-wrap items-end justify-between gap-2">
               <h2 id="search-results-heading" className="text-lg font-semibold text-white">
-                Results for &ldquo;{activeQuery.trim()}&rdquo;
+                {t("search.resultsFor", "Results for “{query}”").replace("{query}", activeQuery.trim())}
               </h2>
               <p className="text-xs text-white/72">
-                {filteredResults.all.length} results · {filteredResults.cities.length} cities · {filteredResults.places.length} venues · {filteredResults.events.length} events · {filteredResults.services.length} services · {filteredResults.guides.length} guides
+                {t("search.resultCounts", "{results} results · {cities} cities · {places} venues · {events} events · {services} services · {guides} guides").replace("{results}", filteredResults.all.length).replace("{cities}", filteredResults.cities.length).replace("{places}", filteredResults.places.length).replace("{events}", filteredResults.events.length).replace("{services}", filteredResults.services.length).replace("{guides}", filteredResults.guides.length)}
               </p>
             </div>
           </section>
@@ -1407,7 +1431,7 @@ export default function SearchPage() {
 
         {activeQuery.trim() && isLoading && (
           <section className="qa-panel mb-6 rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5">
-            <p className="mb-4 text-xs uppercase tracking-[0.18em] text-white/45">Scanning atlas signal</p>
+            <p className="mb-4 text-xs uppercase tracking-[0.18em] text-white/45">{t("search.scanning", "Scanning atlas signal")}</p>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               <SearchResultSkeleton tone="cyan" />
               <SearchResultSkeleton tone="rose" />
@@ -1422,13 +1446,13 @@ export default function SearchPage() {
         {activeQuery.trim() && !isLoading && filteredResults.all.length === 0 && (
           <section className="qa-panel rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(20,20,20,0.95),rgba(10,10,10,0.99))] p-5 sm:rounded-[28px] sm:p-8">
             <EmptyState
-              title={intentProfile.flags?.nearby && !userLocation ? "Share your location only when you’re ready." : "Nothing exact yet — let’s widen the search."}
+              title={intentProfile.flags?.nearby && !userLocation ? t("search.shareLocationTitle", "Share your location only when you’re ready.") : t("search.noExactTitle", "Nothing exact yet — let’s widen the search.")}
               description={
                 intentProfile.flags?.nearby && !userLocation
-                  ? "Queer Atlas uses your position only to sort nearby results. You can search by city instead."
+                  ? t("search.shareLocationDescription", "Queer Atlas uses your position only to sort nearby results. You can search by city instead.")
                   : activeFilterCount > 0 || typeFilter !== "all"
-                    ? "Your search has filters applied. Remove them first, or try a broader route below."
-                    : "Try a city, browse the atlas, or tell us what is missing."
+                    ? t("search.filtersAppliedDescription", "Your search has filters applied. Remove them first, or try a broader route below.")
+                    : t("search.noResultsDescription", "Try a city, browse the atlas, or tell us what is missing.")
               }
             >
               <div className="flex flex-wrap justify-center gap-2">
@@ -1439,7 +1463,7 @@ export default function SearchPage() {
                     disabled={locationStatus === "requesting"}
                     className="inline-flex items-center gap-2 rounded-full border border-cyan-200/30 bg-cyan-200/12 px-4 py-2 text-xs font-semibold text-cyan-50 transition hover:bg-cyan-200/18 disabled:opacity-60"
                   >
-                    <LocateFixed size={14} /> {locationStatus === "requesting" ? "Finding you…" : "Use my location"}
+                    <LocateFixed size={14} /> {locationStatus === "requesting" ? t("search.findingYou", "Finding you…") : t("search.useMyLocation", "Use my location")}
                   </button>
                 ) : null}
                 {activeFilterCount > 0 || typeFilter !== "all" ? (
@@ -1453,20 +1477,20 @@ export default function SearchPage() {
                     }}
                     className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/72 transition hover:border-white/25 hover:text-white"
                   >
-                    Remove filters
+                    {t("search.removeFilters", "Remove filters")}
                   </button>
                 ) : null}
                 {intentProfile.detectedCity ? (
                   <Link href={cityPath(intentProfile.detectedCity)} className="rounded-full border border-fuchsia-200/24 bg-fuchsia-200/10 px-4 py-2 text-xs font-semibold text-fuchsia-50 transition hover:bg-fuchsia-200/16">
-                    Open {intentProfile.detectedCity}
+                    {t("search.openCity", "Open {city}").replace("{city}", intentProfile.detectedCity)}
                   </Link>
                 ) : (
                   <Link href="/cities" className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs text-white/72 transition hover:border-white/25 hover:text-white">
-                    Browse cities
+                    {t("search.browseCities", "Browse cities")}
                   </Link>
                 )}
                 <Link href="/contribute" className="rounded-full border border-white/12 px-4 py-2 text-xs text-white/58 transition hover:text-white">
-                  Add what’s missing
+                  {t("search.addMissing", "Add what’s missing")}
                 </Link>
               </div>
             </EmptyState>
@@ -1477,10 +1501,10 @@ export default function SearchPage() {
           <section aria-labelledby="search-top-matches-heading" className="mb-6 rounded-[28px] border border-cyan-100/22 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_0%_15%,rgba(244,114,182,0.14),transparent_31%),radial-gradient(circle_at_56%_100%,rgba(139,92,246,0.10),transparent_34%),linear-gradient(160deg,rgba(10,33,43,0.84),rgba(10,7,16,0.99))] p-4 shadow-[0_24px_74px_rgba(0,0,0,0.32),0_12px_42px_rgba(34,211,238,0.05),inset_0_1px_0_rgba(255,255,255,0.065)] sm:p-5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/70">A quick place to start</p>
-                <h2 id="search-top-matches-heading" className="mt-1 text-lg font-semibold text-cyan-100">Best matches</h2>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/70">{t("search.quickStart", "A quick place to start")}</p>
+                <h2 id="search-top-matches-heading" className="mt-1 text-lg font-semibold text-cyan-100">{t("search.bestMatches", "Best matches")}</h2>
               </div>
-              <p className="hidden text-[11px] text-cyan-100/72 sm:block">Closest to what you searched for</p>
+              <p className="hidden text-[11px] text-cyan-100/72 sm:block">{t("search.closestMatch", "Closest to what you searched for")}</p>
             </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {topMatches.map((item, index) => {
@@ -1496,7 +1520,7 @@ export default function SearchPage() {
                     <div className={`relative mb-3 h-1.5 w-20 rounded-full bg-gradient-to-r ${CARD_ACCENT_TONES[index % CARD_ACCENT_TONES.length]}`} />
                     <div className="flex items-center justify-between gap-3">
                       <span className={`rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] ${tone.label}`}>
-                        {getTypeLabel(item.type)}
+                        {typeLabel(item.type)}
                       </span>
                     </div>
                     <p className="mt-2 text-base font-semibold text-white">
@@ -1506,11 +1530,11 @@ export default function SearchPage() {
                       {item.type === "city"
                         ? item.country
                         : item.type === "guide"
-                          ? item.kind || "Guide"
-                          : `${item.city} · ${getTypeLabel(item.type)}`}
+                          ? item.kind || t("search.guide", "Guide")
+                          : `${item.city} · ${typeLabel(item.type)}`}
                     </p>
                     <p className={`mt-2 text-[11px] ${tone.text}`}>
-                      {getMatchReason(item, activeQuery)}
+                      {matchReason(item, activeQuery)}
                     </p>
                     {item.type !== "guide" ? (
                       <VibeTagChips entity={item} tone={tone.chipTone} className="mt-2" includeTypeFallback includeMixedFallback />
@@ -1520,7 +1544,7 @@ export default function SearchPage() {
                         href={getResultHref(item)}
                         className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition ${tone.action}`}
                       >
-                        View {getTypeLabel(item.type).toLowerCase()}
+                        {t("search.viewType", "View {type}").replace("{type}", typeLabel(item.type).toLowerCase())}
                       </Link>
                       {item.type !== "city" && item.type !== "guide" && (
                         <button
@@ -1531,7 +1555,7 @@ export default function SearchPage() {
                           }}
                           className={PLAN_ACTION_CLASS}
                         >
-                          Explore {item.city || "city"}
+                          {t("search.exploreCity", "Explore {city}").replace("{city}", item.city || t("search.type.city", "city"))}
                         </button>
                       )}
                     </div>
@@ -1555,7 +1579,7 @@ export default function SearchPage() {
               <span className="flex items-center justify-between gap-3">
                 <span>{section.label}</span>
                 <span className="rounded-full border border-white/14 bg-white/8 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/68">
-                  {section.items.length} {section.items.length === 1 ? "result" : "results"}
+                  {section.items.length} {section.items.length === 1 ? t("search.result", "result") : t("search.results", "results")}
                 </span>
               </span>
             </h2>
@@ -1570,7 +1594,7 @@ export default function SearchPage() {
                     <div className="mb-2 h-1.5 w-16 rounded-full bg-gradient-to-r from-cyan-200 via-sky-200 to-transparent" />
                     <p className="text-xs uppercase tracking-[0.16em] text-cyan-100/70">{city.country}</p>
                     <p className="mt-1 text-base font-semibold">{city.title}</p>
-                    <p className="mt-1 text-[11px] text-cyan-100/80">{getMatchReason(city, activeQuery)}</p>
+                    <p className="mt-1 text-[11px] text-cyan-100/80">{matchReason(city, activeQuery)}</p>
                     <VibeTagChips entity={city} tone="cyan" className="mt-2" includeMixedFallback />
                   </Link>
                 ))}
@@ -1601,7 +1625,7 @@ export default function SearchPage() {
                         {qualityStatus.label}
                       </span>
                     </div>
-                    <p className="mt-1 text-[11px] text-rose-100/80">{getMatchReason(place, activeQuery)}</p>
+                    <p className="mt-1 text-[11px] text-rose-100/80">{matchReason(place, activeQuery)}</p>
                     {place.description ? (
                       <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{place.description}</p>
                     ) : null}
@@ -1611,7 +1635,7 @@ export default function SearchPage() {
                         href={getResultHref(place)}
                         className="rounded-full border border-rose-200/34 bg-rose-200/14 px-3 py-1 text-[11px] font-semibold text-rose-50 transition hover:border-rose-200/52 hover:bg-rose-200/22"
                       >
-                        View venue
+                        {t("search.viewVenue", "View venue")}
                       </Link>
                       <button
                         type="button"
@@ -1621,7 +1645,7 @@ export default function SearchPage() {
                         }}
                         className={PLAN_ACTION_CLASS}
                       >
-                        Explore {place.city}
+                        {t("search.exploreCity", "Explore {city}").replace("{city}", place.city)}
                       </button>
                     </div>
                   </article>
@@ -1648,12 +1672,12 @@ export default function SearchPage() {
                       <p className="text-sm font-semibold">{event.name}</p>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{event.city} | Event</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-white/45">{event.city} | {t("search.type.event", "Event")}</p>
                       <span className={`rounded-full border px-2 py-0.5 text-[10px] ${getQualityPillClass(qualityStatus.label)}`}>
                         {qualityStatus.label}
                       </span>
                     </div>
-                    <p className="mt-1 text-[11px] text-violet-100/80">{getMatchReason(event, activeQuery)}</p>
+                    <p className="mt-1 text-[11px] text-violet-100/80">{matchReason(event, activeQuery)}</p>
                     {event.description ? (
                       <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{event.description}</p>
                     ) : null}
@@ -1663,7 +1687,7 @@ export default function SearchPage() {
                         href={getResultHref(event)}
                         className="rounded-full border border-violet-200/34 bg-violet-200/14 px-3 py-1 text-[11px] font-semibold text-violet-50 transition hover:border-violet-200/52 hover:bg-violet-200/22"
                       >
-                        View event
+                        {t("search.viewEvent", "View event")}
                       </Link>
                       <button
                         type="button"
@@ -1673,7 +1697,7 @@ export default function SearchPage() {
                         }}
                         className={PLAN_ACTION_CLASS}
                       >
-                        Explore {event.city}
+                        {t("search.exploreCity", "Explore {city}").replace("{city}", event.city)}
                       </button>
                     </div>
                   </article>
@@ -1699,13 +1723,13 @@ export default function SearchPage() {
                       <p className="text-sm font-semibold">{service.name}</p>
                       <div className="mt-2 flex items-center justify-between gap-2">
                         <p className="text-xs uppercase tracking-[0.16em] text-white/45">
-                          {service.city} · {service.serviceType || "Service"}
+                          {service.city} · {service.serviceType || t("search.type.service", "Service")}
                         </p>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] ${getQualityPillClass(qualityStatus.label)}`}>
                           {qualityStatus.label}
                         </span>
                       </div>
-                      <p className="mt-1 text-[11px] text-emerald-100/80">{getMatchReason(service, activeQuery)}</p>
+                      <p className="mt-1 text-[11px] text-emerald-100/80">{matchReason(service, activeQuery)}</p>
                       {service.description ? (
                         <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/62">{service.description}</p>
                       ) : null}
@@ -1715,10 +1739,10 @@ export default function SearchPage() {
                           href={getResultHref(service)}
                           className="rounded-full border border-emerald-200/34 bg-emerald-200/14 px-3 py-1 text-[11px] font-semibold text-emerald-50 transition hover:border-emerald-200/52 hover:bg-emerald-200/22"
                         >
-                          View service
+                          {t("search.viewService", "View service")}
                         </Link>
                         <button type="button" onClick={() => openCityFromItem(service)} className={PLAN_ACTION_CLASS}>
-                          Explore {service.city}
+                          {t("search.exploreCity", "Explore {city}").replace("{city}", service.city)}
                         </button>
                       </div>
                     </article>
@@ -1733,12 +1757,12 @@ export default function SearchPage() {
                     className="rounded-2xl border border-amber-300/18 bg-[radial-gradient(circle_at_100%_0%,rgba(251,191,36,0.10),transparent_38%),linear-gradient(160deg,rgba(91,55,15,0.38),rgba(8,8,11,0.98))] p-3 text-left shadow-[0_14px_34px_rgba(0,0,0,0.18)] transition hover:-translate-y-0.5 hover:border-amber-200/40 sm:p-4"
                   >
                     <div className="mb-2 h-1.5 w-16 rounded-full bg-gradient-to-r from-amber-200 via-orange-200 to-transparent" />
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/64">{guide.kind || "Guide"}</p>
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-amber-100/64">{guide.kind || t("search.guide", "Guide")}</p>
                     <p className="mt-1 text-sm font-semibold">{guide.title}</p>
                     {guide.summary ? (
                       <p className="mt-2 line-clamp-3 text-xs leading-5 text-white/62">{guide.summary}</p>
                     ) : null}
-                    <p className="mt-3 text-[11px] font-semibold text-amber-100">Read guide →</p>
+                    <p className="mt-3 text-[11px] font-semibold text-amber-100">{t("search.readGuide", "Read guide →")}</p>
                   </Link>
                 ))}
             </div>
@@ -1750,10 +1774,10 @@ export default function SearchPage() {
           <aside className="hidden xl:block">
             <section aria-labelledby="search-map-heading" className="sticky top-6 overflow-hidden rounded-[28px] border border-cyan-200/20 bg-[radial-gradient(circle_at_100%_0%,rgba(34,211,238,0.16),transparent_34%),radial-gradient(circle_at_0%_0%,rgba(139,92,246,0.12),transparent_32%),linear-gradient(165deg,rgba(10,29,43,0.96),rgba(5,7,14,0.99))] shadow-[0_28px_80px_rgba(0,0,0,0.46),inset_0_1px_0_rgba(255,255,255,0.05)]">
               <div className="border-b border-white/10 px-4 py-4">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/75">Search map</p>
-                <h3 id="search-map-heading" className="mt-1 text-base font-semibold text-white">See results on the map</h3>
+                <p className="text-[11px] uppercase tracking-[0.18em] text-cyan-100/75">{t("search.searchMap", "Search map")}</p>
+                <h3 id="search-map-heading" className="mt-1 text-base font-semibold text-white">{t("search.seeResultsOnMap", "See results on the map")}</h3>
                 <p className="mt-2 text-xs text-white/62">
-                  The map follows your current search and filters.
+                  {t("search.mapFollowsSearch", "The map follows your current search and filters.")}
                 </p>
               </div>
               <div className="h-[27rem] w-full bg-black/40">
@@ -1761,7 +1785,7 @@ export default function SearchPage() {
                   <div ref={searchMapContainerRef} className="h-full w-full" />
                 ) : (
                   <div className="flex h-full items-center justify-center px-6 text-center text-sm text-white/60">
-                    Search for a city or place to see matching locations.
+                    {t("search.mapEmpty", "Search for a city or place to see matching locations.")}
                   </div>
                 )}
               </div>
@@ -1770,7 +1794,7 @@ export default function SearchPage() {
                   <p className="text-xs text-rose-200">{searchMapError}</p>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">Results by city</p>
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/55">{t("search.resultsByCity", "Results by city")}</p>
                     <div className="space-y-1.5">
                       {hotspotRows.length > 0 ? (
                         hotspotRows.map((row) => (
@@ -1782,7 +1806,7 @@ export default function SearchPage() {
                           </div>
                         ))
                       ) : (
-                        <p className="text-xs text-white/55">No hotspots yet.</p>
+                        <p className="text-xs text-white/55">{t("search.noHotspots", "No hotspots yet.")}</p>
                       )}
                     </div>
                   </div>

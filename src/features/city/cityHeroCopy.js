@@ -31,8 +31,29 @@ function germanHeroFallback(citySlug) {
   );
 }
 
+function portugueseHeroFallback(citySlug) {
+  const city = cityLabel(citySlug);
+  return hero(
+    `${city} reúne vida queer local, comunidade e noites que mudam com a agenda atual.`,
+    `O lado queer de ${city} revela-se através de lugares de confiança, eventos atuais e redes locais.`,
+    "Pessoas da cidade, visitantes e a comunidade queer criam uma cena com ritmo e espaços próprios.",
+    `Comece em ${city} num lugar de confiança, consulte a agenda do dia e deixe o ritmo local orientar a sua rota.`,
+  );
+}
+
 function germanHeroFromGuide(citySlug) {
   const sections = getLocalizedCityGuide(citySlug, "de", []);
+  if (!Array.isArray(sections) || sections.length < 4) return null;
+  return hero(
+    String(sections[0]?.text || "").trim(),
+    String(sections[1]?.text || "").trim(),
+    String(sections[3]?.text || "").trim(),
+    String(sections[2]?.text || "").trim(),
+  );
+}
+
+function portugueseHeroFromGuide(citySlug) {
+  const sections = getLocalizedCityGuide(citySlug, "pt", []);
   if (!Array.isArray(sections) || sections.length < 4) return null;
   return hero(
     String(sections[0]?.text || "").trim(),
@@ -466,6 +487,9 @@ export function getCityHeroCopy(citySlug, locale = "en") {
   }
   if (language === "de") {
     return LOCALIZED_CITY_HERO_COPY.de?.[city] || germanHeroFromGuide(city) || (CITY_HERO_COPY[city] ? germanHeroFallback(city) : null);
+  }
+  if (language === "pt") {
+    return portugueseHeroFromGuide(city) || (CITY_HERO_COPY[city] ? portugueseHeroFallback(city) : null);
   }
   if (language === "fr") return LOCALIZED_CITY_HERO_COPY.fr?.[city] || null;
   return CITY_HERO_COPY[city] || null;

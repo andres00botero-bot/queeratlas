@@ -198,6 +198,25 @@ const FRENCH_CITY_CLUSTER_TOPICS = Object.freeze({
   "drag-shows-tonight": { title: "Shows drag ce soir", summary: "Des shows drag et scènes de performance à vérifier pour ce soir, avec les horaires et alternatives à portée de main.", keyphrases: ["drag show ce soir", "événements drag LGBTQ+", "spectacle drag"] },
 });
 
+const PORTUGUESE_CITY_CLUSTER_TOPICS = Object.freeze({
+  "queer-techno-clubs": { title: "Clubes techno queer", summary: "Uma seleção de clubes techno queer para planear a noite, perceber a entrada e escolher a atmosfera certa.", keyphrases: ["clubes techno queer", "festas techno LGBTQ+", "cena eletrónica queer"] },
+  "safest-queer-bars": { title: "Bares queer: referências práticas", summary: "Bares queer escolhidos com contexto de bairro, acesso e deslocação, sem prometer segurança absoluta.", keyphrases: ["bares queer acolhedores", "bares LGBTQ+", "saídas queer com contexto"] },
+  "lesbian-nightlife": { title: "Noites lésbicas e sáficas", summary: "Referências para encontrar noites lésbicas, sáficas e lideradas por mulheres, do primeiro copo aos momentos altos.", keyphrases: ["noites lésbicas", "bares sáficos", "festas queer para mulheres"] },
+  "queer-cafes": { title: "Cafés queer e espaços diurnos", summary: "Espaços queer ou acolhedores para conversar, preparar a noite e descobrir a cidade sem pressão.", keyphrases: ["cafés queer", "cafés LGBTQ+", "espaços queer de dia"] },
+  "events-tonight": { title: "Eventos LGBTQ+ esta noite", summary: "Eventos para confirmar esta noite, com referências rápidas de horário, local e alternativas úteis.", keyphrases: ["eventos LGBTQ+ esta noite", "festas gay hoje", "saídas queer hoje"] },
+  "queer-bars": { title: "Guia de bares queer", summary: "Bares queer escolhidos para começar a noite, encontrar a atmosfera certa e construir uma rota mais simples.", keyphrases: ["melhores bares queer", "guia de bares gay", "bares LGBTQ+"] },
+  "queer-clubs": { title: "Guia de clubes queer", summary: "Clubes queer selecionados para entender o ritmo da noite, a atmosfera e as alternativas próximas.", keyphrases: ["clubes queer", "clubes gay", "vida noturna LGBTQ+"] },
+  "queer-hotels": { title: "Alojamentos acolhedores para pessoas queer", summary: "Alojamentos escolhidos pela localização, acesso a bairros vivos e utilidade para uma viagem queer.", keyphrases: ["hotéis queer friendly", "hotéis LGBTQ+", "alojamento gay friendly"] },
+  "queer-events-this-week": { title: "Eventos LGBTQ+ esta semana", summary: "Eventos próximos para planear datas, energia da cidade e deslocações durante a semana.", keyphrases: ["eventos LGBTQ+ esta semana", "festas gay esta semana", "agenda queer"] },
+  "queer-safe-areas": { title: "Bairros queer: referências para deslocação", summary: "Referências de bairro para organizar movimentos com mais contexto, alternativas e prudência.", keyphrases: ["bairros queer", "bairros LGBTQ+", "zonas acolhedoras LGBTQ+"] },
+  "queer-rooftop-bars": { title: "Bares queer em rooftops", summary: "Rooftops e esplanadas para prolongar a noite, com referências de programa, bairro e alternativas próximas.", keyphrases: ["rooftops queer", "bares rooftop gay", "esplanadas LGBTQ+"] },
+  "gay-sauna-guide": { title: "Guia de saunas gay", summary: "Saunas gay selecionadas com referências claras sobre acesso, horários e o contexto do bairro.", keyphrases: ["guia de saunas gay", "sauna gay", "sauna LGBTQ+"] },
+  "queer-friendly-coworking": { title: "Coworking acolhedor para pessoas queer", summary: "Espaços de trabalho e lugares diurnos úteis para trabalhar, encontrar pessoas e manter ligação à vida local.", keyphrases: ["coworking queer friendly", "coworking LGBTQ+", "espaço de trabalho gay friendly"] },
+  "underground-queer-nightlife": { title: "Vida noturna queer alternativa", summary: "Pistas para descobrir uma vida noturna queer mais alternativa, com atenção ao programa, música e contexto real.", keyphrases: ["vida noturna queer alternativa", "clubes gay underground", "cena queer alternativa"] },
+  "queer-travel-safety": { title: "Conselhos para viagem queer", summary: "Referências práticas para preparar uma viagem queer com mais contexto local, opções e prudência.", keyphrases: ["segurança em viagem LGBTQ+", "viagem queer", "conselhos para viagem gay"] },
+  "drag-shows-tonight": { title: "Shows de drag esta noite", summary: "Shows de drag e performance para confirmar esta noite, com horários e alternativas por perto.", keyphrases: ["show de drag esta noite", "eventos drag LGBTQ+", "espetáculo drag"] },
+});
+
 export function getCityClusterTopic(topic = "") {
   const key = String(topic || "").trim().toLowerCase();
   return CITY_CLUSTER_TOPICS[key] || null;
@@ -207,8 +226,10 @@ export function getLocalizedCityClusterTopic(topic = "", locale = "en") {
   const key = String(topic || "").trim().toLowerCase();
   const base = CITY_CLUSTER_TOPICS[key];
   if (!base) return null;
-  if (String(locale || "").toLowerCase().split("-")[0] !== "fr") return base;
-  return { ...base, ...(FRENCH_CITY_CLUSTER_TOPICS[key] || {}) };
+  const language = String(locale || "").toLowerCase().split("-")[0];
+  if (language === "fr") return { ...base, ...(FRENCH_CITY_CLUSTER_TOPICS[key] || {}) };
+  if (language === "pt") return { ...base, ...(PORTUGUESE_CITY_CLUSTER_TOPICS[key] || {}) };
+  return base;
 }
 
 export function listCityClusterTopics() {

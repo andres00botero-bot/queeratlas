@@ -299,23 +299,26 @@ function scoreCandidate(candidate, rule, todayIso) {
 
 function formatTypeLabel(type = "", kind = "place", locale = "en") {
   const isFrench = locale === "fr";
-  if (kind === "event") return isFrench ? "Événement" : "Event";
-  if (kind === "service") return isFrench ? "Service" : "Service";
+  const isPortuguese = locale === "pt";
+  if (kind === "event") return isFrench ? "Événement" : isPortuguese ? "Evento" : "Event";
+  if (kind === "service") return "Serviço";
+  if (isPortuguese) return String(type || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Local";
   if (isFrench) return String(type || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Lieu";
   return cleanText(type).replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Place";
 }
 
 function buildReason(candidate, locale = "en") {
   const isFrench = locale === "fr";
+  const isPortuguese = locale === "pt";
   const pieces = [formatTypeLabel(candidate.type, candidate.kind, locale)];
   const location = cleanText(candidate.entity?.location);
   if (location) pieces.push(location);
   if (candidate.kind !== "place" && candidate.reviews.rating > 0) {
-    pieces.push(isFrench ? `${candidate.reviews.rating.toFixed(1)} note de la communauté${candidate.reviews.count ? ` · ${candidate.reviews.count} avis` : ""}` : `${candidate.reviews.rating.toFixed(1)} community rating${candidate.reviews.count ? ` · ${candidate.reviews.count} reviews` : ""}`);
+    pieces.push(isFrench ? `${candidate.reviews.rating.toFixed(1)} note de la communauté${candidate.reviews.count ? ` · ${candidate.reviews.count} avis` : ""}` : isPortuguese ? `${candidate.reviews.rating.toFixed(1)} avaliação da comunidade${candidate.reviews.count ? ` · ${candidate.reviews.count} opiniões` : ""}` : `${candidate.reviews.rating.toFixed(1)} community rating${candidate.reviews.count ? ` · ${candidate.reviews.count} reviews` : ""}`);
   } else if (candidate.sources > 0) {
-    pieces.push(isFrench ? `${candidate.sources} source${candidate.sources === 1 ? "" : "s"} enregistrée${candidate.sources === 1 ? "" : "s"}` : `${candidate.sources} saved source${candidate.sources === 1 ? "" : "s"}`);
+    pieces.push(isFrench ? `${candidate.sources} source${candidate.sources === 1 ? "" : "s"} enregistrée${candidate.sources === 1 ? "" : "s"}` : isPortuguese ? `${candidate.sources} fonte registada${candidate.sources === 1 ? "" : "s"}` : `${candidate.sources} saved source${candidate.sources === 1 ? "" : "s"}`);
   } else if (candidate.hasOfficialLink) {
-    pieces.push(isFrench ? "lien officiel disponible" : "official link available");
+    pieces.push(isFrench ? "lien officiel disponible" : isPortuguese ? "ligação oficial disponível" : "official link available");
   }
   return pieces.join(" · ");
 }
@@ -377,7 +380,7 @@ export function selectCityDiscoveryResults({ city, topic, places = [], events = 
       description: cleanText(candidate.entity?.description),
       location: cleanText(candidate.entity?.location),
       reason: buildReason(candidate, locale),
-      matchLabel: locale === "fr" ? (candidate.exact ? "Résultat correspondant" : "Alternative associée") : (candidate.exact ? rule.exactLabel : rule.relatedLabel),
+      matchLabel: locale === "fr" ? (candidate.exact ? "Résultat correspondant" : "Alternative associée") : locale === "pt" ? (candidate.exact ? "Resultado correspondente" : "Alternativa relacionada") : (candidate.exact ? rule.exactLabel : rule.relatedLabel),
       exact: candidate.exact,
       rating: candidate.reviews.rating,
       reviewCount: candidate.reviews.count,
@@ -389,7 +392,7 @@ export function selectCityDiscoveryResults({ city, topic, places = [], events = 
 }
 
 function getGuideText(city, title, locale = "en") {
-  const guide = locale === "fr" && hasLocalizedCityGuide(city, locale)
+  const guide = ["fr", "pt"].includes(locale) && hasLocalizedCityGuide(city, locale)
     ? getLocalizedCityGuide(city, locale, [])
     : Array.isArray(cityGuideConfig[city]) ? cityGuideConfig[city] : [];
   return cleanText(guide.find((entry) => cleanText(entry?.title).toLowerCase() === title.toLowerCase())?.text);
@@ -404,10 +407,11 @@ function firstSentence(value = "") {
 
 function buildNarrative({ city, cityName, topic, results, exactCount, locale = "en" }) {
   const isFrench = locale === "fr";
-  const nightlife = firstSentence(getGuideText(city, isFrench ? "Vie nocturne" : "Nightlife", locale));
-  const districts = firstSentence(getGuideText(city, isFrench ? "Quartiers" : "Districts", locale));
-  const safety = firstSentence(getGuideText(city, isFrench ? "Sécurité" : "Safety", locale));
-  const about = firstSentence(getGuideText(city, isFrench ? "Panorama" : "About", locale));
+  const isPortuguese = locale === "pt";
+  const nightlife = firstSentence(getGuideText(city, isFrench ? "Vie nocturne" : isPortuguese ? "Vida noturna" : "Nightlife", locale));
+  const districts = firstSentence(getGuideText(city, isFrench ? "Quartiers" : isPortuguese ? "Bairros" : "Districts", locale));
+  const safety = firstSentence(getGuideText(city, isFrench ? "Sécurité" : isPortuguese ? "Segurança" : "Safety", locale));
+  const about = firstSentence(getGuideText(city, isFrench ? "Panorama" : isPortuguese ? "Panorama" : "About", locale));
   const names = results.slice(0, 3).map((entry) => entry.name);
   const shortlist = names.length > 0 ? names.join(names.length > 1 ? ", " : "") : "the current local listings";
 
@@ -415,6 +419,11 @@ function buildNarrative({ city, cityName, topic, results, exactCount, locale = "
     const topicCopy = getLocalizedCityClusterTopic(topic, "fr");
     const shortlistText = names.length > 0 ? ` La sélection actuelle commence par ${shortlist}.` : " Les données locales ne proposent pas encore de résultat exact vérifié.";
     return { intro: `${topicCopy?.summary || `Une sélection locale pour ${cityName}.`}${shortlistText}`, districtRead: districts, safetyRead: safety, exactCount };
+  }
+  if (isPortuguese) {
+    const topicCopy = getLocalizedCityClusterTopic(topic, "pt");
+    const shortlistText = names.length > 0 ? ` A seleção atual começa por ${shortlist}.` : " Ainda não há um resultado local exato verificado nos dados disponíveis.";
+    return { intro: `${topicCopy?.summary || `Uma seleção local para ${cityName}.`}${shortlistText}`, districtRead: districts, safetyRead: safety, exactCount };
   }
 
   const copyByTopic = {

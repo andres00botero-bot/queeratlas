@@ -206,7 +206,7 @@ function CompassPreview({ onOpen }) {
           <span className="min-w-0 flex-1 sm:flex sm:items-center sm:gap-6">
             <span className="block shrink-0">
               <span className="inline-flex rounded-full border border-[#88d9d4]/24 bg-[#88d9d4]/[0.09] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.18em] text-[#d7fbf8]/88">{t("home.dictionaryNew", "New · Queer Dictionary")}</span>
-              <span className="qa-display mt-2 block text-[19px] font-semibold tracking-[-0.035em] text-white sm:text-[1.45rem]">Queer Dictionary</span>
+              <span className="qa-display mt-2 block text-[19px] font-semibold tracking-[-0.035em] text-white sm:text-[1.45rem]">{t("home.dictionaryTitle", "Queer Dictionary")}</span>
             </span>
             <span className="mt-1 block text-left text-xs font-medium leading-5 text-white/68 sm:mt-0 sm:flex-1 sm:text-sm sm:leading-6">{t("home.dictionaryDescription", "Identities, pronouns and community language — with sources and nuance.")}</span>
           </span>

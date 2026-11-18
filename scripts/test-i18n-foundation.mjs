@@ -10,13 +10,14 @@ import {
   toLocalePath,
 } from "../src/lib/i18n/localeRouting.js";
 import { getMessage } from "../src/lib/i18n/messages.js";
-import { defaultsToFrenchByCountry, defaultsToGermanByCountry, defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
+import { defaultsToFrenchByCountry, defaultsToGermanByCountry, defaultsToPortugueseByCountry, defaultsToSpanishByCountry } from "../src/lib/i18n/localeGeo.js";
 import { isLocaleSearchReady } from "../src/lib/i18n/localeSeoRollout.js";
 
 assert.equal(DEFAULT_LOCALE, "en");
-assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es", "fr", "de"]);
+assert.deepEqual(getPublishedLocales().map((locale) => locale.code), ["en", "es", "fr", "de", "pt"]);
 assert.equal(getPublishedLocales().every((locale) => locale.published), true);
 assert.equal(normalizeLocale("es-ES"), "es");
+assert.equal(normalizeLocale("pt-BR"), "pt");
 assert.equal(normalizeLocale("unknown"), "en");
 assert.equal(getLocaleFromPathname("/es/madrid"), "es");
 assert.equal(getLocaleFromPathname("/madrid"), null);
@@ -36,6 +37,7 @@ assert.equal(getMessage("es", "city.exploreOnMap"), "Explorar en el mapa");
 assert.equal(getMessage("es", "city.servicesLower"), "servicios");
 assert.equal(getMessage("es", "city.cityOverview"), "Resumen de la ciudad");
 assert.equal(getMessage("de", "global.events"), "Veranstaltungen");
+assert.equal(getMessage("pt", "global.events"), "Eventos");
 assert.equal(getMessage("en", "home.joinFree"), "Join free");
 assert.equal(defaultsToSpanishByCountry("ES"), true);
 assert.equal(defaultsToSpanishByCountry("mx"), true);
@@ -47,6 +49,9 @@ assert.equal(defaultsToGermanByCountry("BE"), false);
 assert.equal(defaultsToFrenchByCountry("FR"), true);
 assert.equal(defaultsToFrenchByCountry("MC"), true);
 assert.equal(defaultsToFrenchByCountry("BE"), false);
+assert.equal(defaultsToPortugueseByCountry("PT"), true);
+assert.equal(defaultsToPortugueseByCountry("BR"), true);
+assert.equal(defaultsToPortugueseByCountry("SE"), false);
 assert.equal(isLocaleSearchReady("en"), true);
 assert.equal(isLocaleSearchReady("es"), true);
 assert.equal(isLocaleSearchReady("de"), true);

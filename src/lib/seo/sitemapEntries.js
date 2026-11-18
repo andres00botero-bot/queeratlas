@@ -67,7 +67,7 @@ function withLanguageAlternates(entries = [], { locales = getSearchReadyLocales(
     const path = englishUrl.slice(QA_SITE_URL.length) || "/";
     const languages = { en: englishUrl, "x-default": englishUrl };
     const variants = [{ ...entry, languages }];
-    for (const language of ["es", "fr", "de"]) {
+    for (const language of getSearchReadyLocales().filter((locale) => locale !== "en")) {
       if (!searchReadyLocales.has(language)) continue;
       const localizedUrl = `${QA_SITE_URL}${localePath(path, language)}`;
       languages[language] = localizedUrl;
@@ -224,13 +224,12 @@ export async function getVenueSitemapEntries() {
     listCityRegistry({ indexableOnly: true }),
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
-  // French detail pages are deliberately noindex until their editorial copy is
-  // ready. Never submit a noindex URL in an XML sitemap.
+  // Detail pages inherit the same reviewed language set as robots and hreflang.
   return canonicalEntries(withLanguageAlternates(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
-  }, resolveEntityLastModified(venue))), { locales: ["en", "es", "de"] }));
+  }, resolveEntityLastModified(venue))), { locales: getSearchReadyLocales() }));
 }
 
 export async function getEventSitemapEntries() {
@@ -243,7 +242,7 @@ export async function getEventSitemapEntries() {
     url: `${QA_SITE_URL}${buildEventPath(event.city, event)}`,
     changeFrequency: "daily",
     priority: 0.76,
-  }, resolveEntityLastModified(event))), { locales: ["en", "es", "de"] }));
+  }, resolveEntityLastModified(event))), { locales: getSearchReadyLocales() }));
 }
 
 export async function getServiceSitemapEntries() {
@@ -256,5 +255,5 @@ export async function getServiceSitemapEntries() {
     url: `${QA_SITE_URL}${buildServicePath(service.city, service)}`,
     changeFrequency: "monthly",
     priority: 0.68,
-  }, resolveEntityLastModified(service))), { locales: ["en", "es", "de"] }));
+  }, resolveEntityLastModified(service))), { locales: getSearchReadyLocales() }));
 }

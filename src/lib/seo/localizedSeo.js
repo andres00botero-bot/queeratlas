@@ -20,6 +20,7 @@ const OPEN_GRAPH_LOCALES = Object.freeze({
   es: "es_ES",
   fr: "fr_FR",
   de: "de_DE",
+  pt: "pt_PT",
 });
 
 /** Return the Open Graph locale for one of Queer Atlas's published locales. */
@@ -37,7 +38,7 @@ export function localizedAlternates(path = "/", locale = DEFAULT_LOCALE) {
   const normalizedPath = cleanPath(path);
   const searchReadyLocales = new Set(getSearchReadyLocales());
   const languages = { "x-default": normalizedPath };
-  for (const language of ["en", "es", "fr", "de"]) {
+  for (const language of ["en", "es", "fr", "de", "pt"]) {
     if (searchReadyLocales.has(language)) languages[language] = localePath(normalizedPath, language);
   }
   return {

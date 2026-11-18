@@ -3817,7 +3817,7 @@ function FavoritesPageContent() {
           </div>
 
           {isViewingAnotherMember && viewedProfileLoading ? (
-            <p className="mt-3 text-xs text-white/66">Loading member profile...</p>
+            <p className="mt-3 text-xs text-white/66">{locale === "pt" ? "A carregar perfil de membro..." : "Loading member profile..."}</p>
           ) : null}
           {isViewingAnotherMember && viewedProfileError ? (
             <p className="mt-3 rounded-xl border border-amber-200/24 bg-amber-200/12 px-3 py-2 text-xs text-amber-100">
@@ -3938,7 +3938,7 @@ function FavoritesPageContent() {
                       </span>
                     </div>
                     {isReadOnlyPublicProfileView && viewedProfileFriendsLoading ? (
-                      <p className="mt-3 text-xs text-white/56">Loading friends...</p>
+                      <p className="mt-3 text-xs text-white/56">{locale === "pt" ? "A carregar amizades..." : "Loading friends..."}</p>
                     ) : effectiveProfileFriends.length > 0 ? (
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
                         {effectiveProfileFriends.slice(0, 5).map((friend) => {
@@ -3984,7 +3984,7 @@ function FavoritesPageContent() {
                   </div>
                   {!isViewingAnotherMember ? (
                     <div className="relative mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-cyan-200/18 bg-cyan-200/[0.09] px-3 py-2.5">
-                      <p className="text-xs leading-5 text-cyan-50/82">Keep this card clear, warm, and current. It is the first thing members read before they follow or message you.</p>
+                      <p className="text-xs leading-5 text-cyan-50/82">{locale === "pt" ? "Mantenha este cartão claro, acolhedor e atualizado. É a primeira coisa que outras pessoas leem antes de seguir ou enviar mensagem." : "Keep this card clear, warm, and current. It is the first thing members read before they follow or message you."}</p>
                       <button
                         type="button"
                         onClick={() => {
@@ -4010,7 +4010,7 @@ function FavoritesPageContent() {
                 <div className="rounded-[26px] border border-amber-200/24 bg-[linear-gradient(180deg,rgba(251,191,36,0.14),rgba(0,0,0,0.26))] p-4 shadow-[0_18px_48px_rgba(245,158,11,0.10)]">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/74">Atlas Cred</p>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-amber-100/74">{locale === "pt" ? "Reputação Atlas" : "Atlas Cred"}</p>
                       <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">{atlasCredLevel}</p>
                     </div>
                     <div className="rounded-2xl border border-white/16 bg-black/24 px-3 py-2 text-right">
@@ -4079,7 +4079,7 @@ function FavoritesPageContent() {
                     <p className="text-[11px] uppercase tracking-[0.14em] text-white/78">
                       {isReadOnlyPublicProfileView ? "Moments & stories" : "Your moments & stories"}
                     </p>
-                    <p className="mt-1 text-xs text-white/52">Images for the mood, stories for the context.</p>
+                    <p className="mt-1 text-xs text-white/52">{locale === "pt" ? "Imagens para o ambiente, histórias para o contexto." : "Images for the mood, stories for the context."}</p>
                   </div>
                   {!isReadOnlyPublicProfileView ? (
                     <div className="flex flex-wrap gap-2">
@@ -4157,13 +4157,13 @@ function FavoritesPageContent() {
                 <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
                   <div className="rounded-[24px] border border-white/12 bg-black/22 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-[0.13em] text-cyan-100/76">Photo moments</p>
+                      <p className="text-[11px] uppercase tracking-[0.13em] text-cyan-100/76">{locale === "pt" ? "Momentos em fotos" : "Photo moments"}</p>
                       <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/56">
                         {effectiveProfileMemories.length}/5
                       </span>
                     </div>
                     {isReadOnlyPublicProfileView && viewedProfileMemoriesLoading ? (
-                      <p className="mt-3 text-xs text-white/62">Loading moments...</p>
+                      <p className="mt-3 text-xs text-white/62">{locale === "pt" ? "A carregar momentos..." : "Loading moments..."}</p>
                     ) : null}
                     {effectiveProfileMemories.length > 0 ? (
                       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -4204,13 +4204,13 @@ function FavoritesPageContent() {
 
                   <div className="rounded-[24px] border border-fuchsia-200/16 bg-fuchsia-200/[0.08] p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] uppercase tracking-[0.13em] text-fuchsia-100/78">Profile stories</p>
+                      <p className="text-[11px] uppercase tracking-[0.13em] text-fuchsia-100/78">{locale === "pt" ? "Histórias do perfil" : "Profile stories"}</p>
                       <span className="rounded-full border border-white/12 bg-white/8 px-2.5 py-1 text-[11px] text-white/56">
                         {effectiveProfileStories.length}
                       </span>
                     </div>
                     {profileStoriesLoading ? (
-                      <p className="mt-3 text-xs text-white/58">Loading stories...</p>
+                      <p className="mt-3 text-xs text-white/58">{locale === "pt" ? "A carregar histórias..." : "Loading stories..."}</p>
                     ) : effectiveProfileStories.length > 0 ? (
                       <div className="mt-3 space-y-2">
                         {effectiveProfileStories.slice(0, 4).map((story) => (
@@ -4248,8 +4248,8 @@ function FavoritesPageContent() {
             <form onSubmit={saveAboutProfile} className="qa-profile-edit mt-4 space-y-5">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Display name</p>
-                  <p className="mb-1 text-[11px] text-white/44">Shown publicly in comments, follows, and member cards.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Nome visível" : "Display name"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Aparece publicamente em comentários, seguidores e cartões de membros." : "Shown publicly in comments, follows, and member cards."}</p>
                   <input
                     value={profileForm.displayName}
                     onChange={(event) =>
@@ -4260,8 +4260,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Pronouns</p>
-                  <p className="mb-1 text-[11px] text-white/44">Optional, but helpful for respectful interaction.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Pronomes" : "Pronouns"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Opcional, mas ajuda a tornar as interações mais respeitosas." : "Optional, but helpful for respectful interaction."}</p>
                   <input
                     value={profileForm.pronouns}
                     onChange={(event) =>
@@ -4272,8 +4272,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Location</p>
-                  <p className="mb-1 text-[11px] text-white/44">Your main city so people understand your local scene.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Localização" : "Location"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "A sua cidade principal para que as pessoas entendam a sua cena local." : "Your main city so people understand your local scene."}</p>
                   <input
                     value={profileForm.homeCity}
                     onChange={(event) =>
@@ -4284,8 +4284,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Country</p>
-                  <p className="mb-1 text-[11px] text-white/44">Adds context for laws, rights, and community conditions.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "País" : "Country"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Acrescenta contexto sobre leis, direitos e condições da comunidade." : "Adds context for laws, rights, and community conditions."}</p>
                   <input
                     value={profileForm.residentCountry}
                     onChange={(event) =>
@@ -4296,8 +4296,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Birthday</p>
-                  <p className="mb-1 text-[11px] text-white/44">Optional. Only add this if you are comfortable sharing it.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Data de nascimento" : "Birthday"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Opcional. Adicione apenas se se sentir à vontade em partilhar." : "Optional. Only add this if you are comfortable sharing it."}</p>
                   <input
                     type="date"
                     value={profileExtras.birthday}
@@ -4311,8 +4311,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">What I&apos;m into</p>
-                  <p className="mb-1 text-[11px] text-white/44">Choose up to 5 keywords. These power your Vibe DNA chips.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Interesses" : "What I&apos;m into"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Escolha até cinco palavras-chave. Elas definem as etiquetas do seu ADN de vibe." : "Choose up to 5 keywords. These power your Vibe DNA chips."}</p>
                   <input
                     value={profileExtras.vibe}
                     onChange={(event) =>
@@ -4361,8 +4361,8 @@ function FavoritesPageContent() {
                   </div>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Tel (optional)</p>
-                  <p className="mb-1 text-[11px] text-white/44">For direct contact with trusted members if you choose.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Telefone (opcional)" : "Tel (optional)"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Para contacto direto com membros de confiança, se quiser." : "For direct contact with trusted members if you choose."}</p>
                   <input
                     value={profileExtras.phone}
                     onChange={(event) =>
@@ -4376,8 +4376,8 @@ function FavoritesPageContent() {
                   />
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">Mail (optional)</p>
-                  <p className="mb-1 text-[11px] text-white/44">Use an address you are okay sharing in community context.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "E-mail (opcional)" : "Mail (optional)"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Use um endereço que se sinta à vontade em partilhar no contexto da comunidade." : "Use an address you are okay sharing in community context."}</p>
                   <input
                     type="email"
                     value={profileExtras.contactEmail}
@@ -4395,8 +4395,8 @@ function FavoritesPageContent() {
                   <Link href="/privacy-settings" className="inline-flex min-h-11 items-center text-sm font-semibold text-[#B9AAF0]">{t("privacy.settings", "Privacy & visibility")}</Link>
                 </div>
                 <div className="rounded-xl border border-white/10 bg-black/28 p-2.5 sm:col-span-2">
-                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">About me (max 300)</p>
-                  <p className="mb-1 text-[11px] text-white/44">A short profile line so people quickly understand you.</p>
+                  <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-white/56">{locale === "pt" ? "Sobre mim (máx. 300)" : "About me (max 300)"}</p>
+                  <p className="mb-1 text-[11px] text-white/44">{locale === "pt" ? "Uma breve apresentação para que as pessoas entendam rapidamente quem é." : "A short profile line so people quickly understand you."}</p>
                   <textarea
                     value={profileExtras.about}
                     onChange={(event) =>
@@ -4437,7 +4437,7 @@ function FavoritesPageContent() {
         <section className="qa-premium-card mb-6 rounded-[28px] border border-white/12 bg-[linear-gradient(180deg,rgba(14,16,20,0.96),rgba(8,8,10,0.99))] p-4 shadow-[0_16px_40px_rgba(0,0,0,0.3)] sm:rounded-[30px] sm:p-5 sm:shadow-[0_24px_72px_rgba(0,0,0,0.38)]">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">Mission control</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/72">{locale === "pt" ? "Centro de controlo" : "Mission control"}</p>
               <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
                 What do you want now?
               </h2>
@@ -4507,7 +4507,7 @@ function FavoritesPageContent() {
           <div className="mt-3 rounded-2xl border border-white/12 bg-black/25 px-3.5 py-2.5 text-xs text-white/70">
             {isGoOutTonightIntent && checkins.length === 0 ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span>No check-ins yet. Start with one venue or event check-in.</span>
+                <span>{locale === "pt" ? "Ainda não há check-ins. Comece num local ou evento." : "No check-ins yet. Start with one venue or event check-in."}</span>
                 <button
                   type="button"
                   onClick={() => tonightSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
@@ -4518,13 +4518,13 @@ function FavoritesPageContent() {
               </div>
             ) : null}
             {isGoOutTonightIntent && checkins.length > 0 && checkins.length <= 3 ? (
-              <span>Quick flow: check in, tap vibe, and jump to saved places.</span>
+              <span>{locale === "pt" ? "Fluxo rápido: faça check-in, escolha o ambiente e vá para os lugares guardados." : "Quick flow: check in, tap vibe, and jump to saved places."}</span>
             ) : null}
             {isGoOutTonightIntent && checkins.length > 3 ? (
-              <span>Compact mode: use filters and list scroll to manage your active check-ins.</span>
+              <span>{locale === "pt" ? "Modo compacto: use filtros e a lista para gerir os seus check-ins ativos." : "Compact mode: use filters and list scroll to manage your active check-ins."}</span>
             ) : null}
             {isPlanTripIntent && plans.length === 0 ? (
-              <span>No plans saved yet. Build your first itinerary in one pass.</span>
+              <span>{locale === "pt" ? "Ainda não há planos guardados. Crie o seu primeiro itinerário de uma vez." : "No plans saved yet. Build your first itinerary in one pass."}</span>
             ) : null}
             {isPlanTripIntent && plans.length > 0 ? (
               <span>{plans.length} saved plans ready. Open one and continue from the latest stop.</span>
@@ -4532,13 +4532,13 @@ function FavoritesPageContent() {
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2 text-[11px] uppercase tracking-[0.12em] text-white/56">
-            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Saved</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">{locale === "pt" ? "Guardado" : "Saved"}</span>
             <span className="text-white/35">-&gt;</span>
-            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Signal</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">{locale === "pt" ? "Sinal" : "Signal"}</span>
             <span className="text-white/35">-&gt;</span>
-            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Route</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">{locale === "pt" ? "Rota" : "Route"}</span>
             <span className="text-white/35">-&gt;</span>
-            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">Share / Meet</span>
+            <span className="rounded-full border border-white/12 bg-white/6 px-2.5 py-1">{locale === "pt" ? "Partilhar / Encontrar" : "Share / Meet"}</span>
           </div>
           {!showSecondaryPanels ? (
             <p className="mt-2 text-[11px] text-white/48">
@@ -4787,7 +4787,7 @@ function FavoritesPageContent() {
                 >
                   <option value="trip">Trip</option>
                   <option value="home">Home</option>
-                  <option value="night_out">Night out</option>
+                  <option value="night_out">{locale === "pt" ? "Saída à noite" : "Night out"}</option>
                 </select>
                 <select
                   value={checkinForm.privacy}
@@ -4811,7 +4811,7 @@ function FavoritesPageContent() {
                   }
                   className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
-                  {checkinCountryOptions.length === 0 ? <option value="">No countries yet</option> : null}
+                  {checkinCountryOptions.length === 0 ? <option value="">{locale === "pt" ? "Ainda não há países" : "No countries yet"}</option> : null}
                   {checkinCountryOptions.map((country) => (
                     <option key={country} value={country}>
                       {country}
@@ -4831,7 +4831,7 @@ function FavoritesPageContent() {
                   }
                   className={PREMIUM_CHECKIN_SELECT_CLASS}
                 >
-                  {checkinCityOptions.length === 0 ? <option value="">No cities yet</option> : null}
+                  {checkinCityOptions.length === 0 ? <option value="">{locale === "pt" ? "Ainda não há cidades" : "No cities yet"}</option> : null}
                   {checkinCityOptions.map((city) => (
                     <option key={city} value={city}>
                       {city}
@@ -4851,9 +4851,9 @@ function FavoritesPageContent() {
                   }
                   className={`${PREMIUM_CHECKIN_SELECT_CLASS} sm:col-span-2`}
                 >
-                  <option value="manual">Manual venue/event</option>
-                  <option value="atlas_place">Choose atlas venue</option>
-                  <option value="atlas_event">Choose atlas event</option>
+                  <option value="manual">{locale === "pt" ? "Local/evento manual" : "Manual venue/event"}</option>
+                  <option value="atlas_place">{locale === "pt" ? "Escolher local do Atlas" : "Choose atlas venue"}</option>
+                  <option value="atlas_event">{locale === "pt" ? "Escolher evento do Atlas" : "Choose atlas event"}</option>
                 </select>
                 {checkinForm.sourceType === "atlas_place" ? (
                   <select
@@ -4944,7 +4944,7 @@ function FavoritesPageContent() {
                 </form>
                 {pendingCheckinVibe ? (
                 <div className="mt-3 rounded-2xl border border-fuchsia-200/22 bg-fuchsia-200/10 p-3">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">How is it right now?</p>
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-fuchsia-100/80">{locale === "pt" ? "Como está agora?" : "How is it right now?"}</p>
                   <p className="mt-1 text-sm text-fuchsia-50/95">
                     Share live vibe for {pendingCheckinVibe.label || "this venue"} in {pendingCheckinVibe.city || "this city"}.
                   </p>
@@ -5135,7 +5135,7 @@ function FavoritesPageContent() {
                         })}
                       </div>
                     </>
-                  ) : <div className="mt-3 rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/48">Create a trip to see its route here.</div>}
+                  ) : <div className="mt-3 rounded-2xl border border-dashed border-white/12 px-4 py-6 text-sm text-white/48">{locale === "pt" ? "Crie uma viagem para ver aqui a respetiva rota." : "Create a trip to see its route here."}</div>}
                 </div>
               ) : (
                 <div className="flex min-h-0 flex-1 flex-col">
@@ -5221,7 +5221,7 @@ function FavoritesPageContent() {
         <section className="qa-premium-card mb-4 rounded-[24px] border border-white/10 bg-[linear-gradient(180deg,rgba(14,20,24,0.94),rgba(10,10,10,0.98))] p-3.5 shadow-[0_12px_30px_rgba(0,0,0,0.28)] sm:shadow-[0_18px_44px_rgba(0,0,0,0.34)]">
           <div className="flex flex-wrap items-center justify-between gap-2.5">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/72">Plan a trip</p>
+              <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/72">{locale === "pt" ? "Planear uma viagem" : "Plan a trip"}</p>
               <p className="mt-1 text-sm text-white/82">{plans.length} saved itineraries ready</p>
             </div>
             <button
@@ -5298,8 +5298,8 @@ function FavoritesPageContent() {
 
             <aside className="hidden">
               <div className="mb-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/70">Saved itineraries</p>
-                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">Your route library</h3>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-fuchsia-100/70">{locale === "pt" ? "Itinerários guardados" : "Saved itineraries"}</p>
+                <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">{locale === "pt" ? "A sua biblioteca de rotas" : "Your route library"}</h3>
                 <p className="mt-2 text-xs leading-5 text-white/56">
                   Open a saved plan, check the route, or remove flows you no longer need.
                 </p>
@@ -5645,7 +5645,7 @@ function FavoritesPageContent() {
             <div className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_left,rgba(251,113,133,0.13),transparent_32%),radial-gradient(circle_at_92%_4%,rgba(34,211,238,0.10),transparent_30%),linear-gradient(180deg,rgba(18,16,22,0.96),rgba(9,9,11,0.99))] p-4 shadow-[0_28px_82px_rgba(0,0,0,0.38)] sm:p-5 xl:h-[54rem] xl:overflow-y-auto">
               <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/48">Month view</p>
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-white/48">{locale === "pt" ? "Vista mensal" : "Month view"}</p>
                   <h3 className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-white">
                     {new Date(`${calendarMonthKey}-01T12:00:00`).toLocaleDateString("en-US", {
                       month: "long",
@@ -5742,7 +5742,7 @@ function FavoritesPageContent() {
 
             <aside className="qa-premium-card rounded-[30px] border border-white/12 bg-[radial-gradient(circle_at_top_right,rgba(251,113,133,0.12),transparent_34%),linear-gradient(180deg,rgba(22,15,20,0.96),rgba(9,9,11,0.99))] p-5 shadow-[0_28px_82px_rgba(0,0,0,0.38)] xl:h-[54rem] xl:overflow-y-auto">
               <div className="mb-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">Selected day</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-rose-100/70">{locale === "pt" ? "Dia selecionado" : "Selected day"}</p>
                 <h3 className="mt-2 text-xl font-semibold tracking-[-0.03em] text-white">
                   {formatDate(selectedCalendarDateKey)}
                 </h3>
@@ -5886,7 +5886,7 @@ function FavoritesPageContent() {
               </div>
 
               <form onSubmit={savePersonalCalendarItem} className="mt-5 rounded-[24px] border border-white/10 bg-white/[0.04] p-4">
-                <p className="text-[10px] uppercase tracking-[0.18em] text-white/46">Add to calendar</p>
+                <p className="text-[10px] uppercase tracking-[0.18em] text-white/46">{locale === "pt" ? "Adicionar ao calendário" : "Add to calendar"}</p>
                 <div className="mt-3 grid gap-2">
                   <input
                     value={calendarItemForm.title}
@@ -5937,8 +5937,8 @@ function FavoritesPageContent() {
                     onChange={(event) => setCalendarItemForm((current) => ({ ...current, reminderMode: event.target.value }))}
                     className="rounded-2xl border border-white/12 bg-[#151018] px-3.5 py-3 text-sm text-white outline-none focus:border-rose-200/40 [&_option]:bg-[#151018]"
                   >
-                    <option value="off">No reminder</option>
-                    <option value="day_of">Day-of reminder</option>
+                    <option value="off">{locale === "pt" ? "Sem lembrete" : "No reminder"}</option>
+                    <option value="day_of">{locale === "pt" ? "Lembrete no próprio dia" : "Day-of reminder"}</option>
                     <option value="day_before">1 day before</option>
                     <option value="hour_before">1 hour before</option>
                   </select>
@@ -5983,7 +5983,7 @@ function FavoritesPageContent() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9ce9e3]/72">Add to trip</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#9ce9e3]/72">{locale === "pt" ? "Adicionar à viagem" : "Add to trip"}</p>
                   <h3 id="trip-picker-title" className="mt-1 text-xl font-semibold tracking-[-0.025em] text-white">
                     Choose a {pendingTripItem.item?.city || "matching"} trip
                   </h3>

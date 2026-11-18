@@ -10,8 +10,7 @@ import { cityPath } from "@/lib/cityRouting";
 // Invitations retain their own participant permissions, separately from DMs.
 export default function PrivateEventRequests() {
   const {user}=useAuth();
-  const {locale}=useLocale();
-  const es=locale==='es';
+  const {t}=useLocale();
   const [rows,setRows]=useState([]);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState(false);
@@ -36,11 +35,11 @@ export default function PrivateEventRequests() {
     }catch{setRows([]);setError(true);}finally{setBusy(false);}
   };
   return <details className="rounded-[22px] border border-[#2B3949] bg-[#141E2C] p-4 text-[#F5F1E8]" onToggle={e=>{if(e.currentTarget.open)void load();else setRows([]);}}>
-    <summary className="min-h-11 cursor-pointer text-sm font-semibold text-[#B9AAF0]">{es?'Solicitudes de eventos privados':'Private event requests'}</summary>
-    <p className="mt-2 text-xs leading-5 text-[#BCC7D2]">{es?'Las invitaciones y los mensajes privados son independientes. Para enviar mensajes, ambas personas deben aprobar el contacto.':'Event invitations and private messages are separate. Both people must approve contact before exchanging messages.'}</p>
-    {busy&&<p role="status" className="mt-3 text-sm text-[#BCC7D2]">{es?'Cargando…':'Loading…'}</p>}
-    {error&&<p role="alert" className="mt-3 text-sm text-[#F2B38B]">{es?'No se pueden cargar las solicitudes.':'Requests could not be loaded.'}</p>}
-    {!busy&&!error&&!rows.length&&<p className="mt-3 text-sm text-[#BCC7D2]">{es?'No hay solicitudes.':'No requests to show.'}</p>}
-    {rows.map(r=><article key={`${r.incoming}:${r.id}`} className="mt-3 border-t border-[#2B3949] pt-3"><h2 className="text-base font-semibold">{r.event.title}</h2><p className="mt-1 text-xs text-[#BCC7D2]">{r.incoming?(es?'Solicitud recibida':'Incoming request'):(es?'Tu solicitud':'Your request')} · {r.status}</p>{r.message&&<p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#BCC7D2]">{r.message}</p>}<Link href={cityPath(r.event.city)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-[#80D4C4]">{es?'Abrir ciudad':'Open city'} ↗</Link></article>)}
+    <summary className="min-h-11 cursor-pointer text-sm font-semibold text-[#B9AAF0]">{t("messages.privateEventRequests", "Private event requests")}</summary>
+    <p className="mt-2 text-xs leading-5 text-[#BCC7D2]">{t("messages.privateEventRequestsIntro", "Event invitations and private messages are separate. Both people must approve contact before exchanging messages.")}</p>
+    {busy&&<p role="status" className="mt-3 text-sm text-[#BCC7D2]">{t("messages.requestsLoading", "Loading…")}</p>}
+    {error&&<p role="alert" className="mt-3 text-sm text-[#F2B38B]">{t("messages.requestsUnavailable", "Requests could not be loaded.")}</p>}
+    {!busy&&!error&&!rows.length&&<p className="mt-3 text-sm text-[#BCC7D2]">{t("messages.noRequests", "No requests to show.")}</p>}
+    {rows.map(r=><article key={`${r.incoming}:${r.id}`} className="mt-3 border-t border-[#2B3949] pt-3"><h2 className="text-base font-semibold">{r.event.title}</h2><p className="mt-1 text-xs text-[#BCC7D2]">{r.incoming?t("messages.incomingRequest", "Incoming request"):t("messages.yourRequest", "Your request")} · {r.status}</p>{r.message&&<p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-[#BCC7D2]">{r.message}</p>}<Link href={cityPath(r.event.city)} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-[#80D4C4]">{t("messages.openCity", "Open city")} ↗</Link></article>)}
   </details>;
 }

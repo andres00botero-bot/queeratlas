@@ -9,6 +9,9 @@ import { isUpcomingPublishedEvent, isPublishedEntity } from "@/lib/publicInvento
 import { evaluateEventSeoQuality, evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import { notFound, permanentRedirect } from "next/navigation";
 import { cityPath } from "@/lib/cityRouting";
+import { headers } from "next/headers";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { getLocalizedCityGuide } from "@/lib/cityGuideTranslations";
 
 export const revalidate = 300;
 
@@ -34,6 +37,7 @@ async function loadCitySearchPreview(city) {
 }
 
 export default async function CityPage({ params }) {
+  const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const resolvedParams = await params;
   const requestedCity = String(resolvedParams?.city || "");
   const city = normalizeCityKey(resolvedParams?.city);
@@ -41,6 +45,7 @@ export default async function CityPage({ params }) {
   if (!config) notFound();
   if (requestedCity.includes("_")) permanentRedirect(cityPath(city));
   const preview = await loadCitySearchPreview(city);
+  const localizedGuide = getLocalizedCityGuide(city, locale, Array.isArray(config?.guide) ? config.guide : []);
 
   return (
     <CityPageClient
@@ -48,7 +53,7 @@ export default async function CityPage({ params }) {
         <CityIndexableContent
         city={city}
         cityName={cityNameFromConfig(config, city)}
-        guide={Array.isArray(config?.guide) ? config.guide.slice(0, 1) : []}
+        guide={localizedGuide.slice(0, 1)}
         venues={preview.venues}
         events={preview.events}
         />

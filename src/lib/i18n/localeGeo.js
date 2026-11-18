@@ -10,6 +10,9 @@ const GERMAN_SPEAKING_COUNTRY_CODES = new Set(["AT", "CH", "DE", "LI"]);
 // France and Monaco have a clear country-level French default. Other
 // multilingual countries are intentionally handled by Accept-Language first.
 const FRENCH_SPEAKING_COUNTRY_CODES = new Set(["FR", "MC"]);
+const PORTUGUESE_SPEAKING_COUNTRY_CODES = new Set([
+  "AO", "BR", "CV", "GW", "MZ", "PT", "ST", "TL",
+]);
 
 export function defaultsToSpanishByCountry(countryCode) {
   return SPANISH_SPEAKING_COUNTRY_CODES.has(String(countryCode || "").trim().toUpperCase());
@@ -21,5 +24,9 @@ export function defaultsToGermanByCountry(countryCode) {
 
 export function defaultsToFrenchByCountry(countryCode) {
   return FRENCH_SPEAKING_COUNTRY_CODES.has(String(countryCode || "").trim().toUpperCase());
+}
+
+export function defaultsToPortugueseByCountry(countryCode) {
+  return PORTUGUESE_SPEAKING_COUNTRY_CODES.has(String(countryCode || "").trim().toUpperCase());
 }
 

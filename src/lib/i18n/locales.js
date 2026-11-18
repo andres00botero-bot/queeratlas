@@ -5,6 +5,8 @@ export const LOCALES = [
   { code: "es", name: "Spanish", nativeName: "Español", published: true },
   { code: "fr", name: "French", nativeName: "Français", published: true },
   { code: "de", name: "German", nativeName: "Deutsch", published: true },
+  // One neutral Portuguese experience for every Portuguese-speaking market.
+  { code: "pt", name: "Portuguese", nativeName: "Português", published: true },
 ];
 
 const LOCALE_CODES = new Set(LOCALES.map((locale) => locale.code));

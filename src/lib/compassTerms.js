@@ -1032,3 +1032,107 @@ export const COMPASS_TERMS = [
 export function findCompassTerm(slug) {
   return COMPASS_TERMS.find((term) => term.slug === slug) || null;
 }
+
+// Short, editorial Portuguese descriptions. We keep the original source records for
+// the other locales and derive a complete `/pt` presentation record at the edge.
+const PORTUGUESE_COMPASS_COPY = Object.freeze({
+  queer: ["Queer", "Termo de identidade e guarda-chuva para pessoas cuja sexualidade ou género não cabe nas normas heterossexuais ou cisgénero."],
+  lgbtqia: ["LGBTQIA+", "Sigla ampla para lésbicas, gays, pessoas bissexuais, trans, queer ou em questionamento, intersexo, assexuais e aromânticas, entre outras."],
+  "non-binary": ["Não binárie", "Pessoa cujo género não é exclusivamente mulher nem exclusivamente homem; cada pessoa não binária define a sua vivência."],
+  transgender: ["Transgénero", "Pessoa cuja identidade de género difere do sexo que lhe foi atribuído ao nascer. Muitas pessoas preferem simplesmente trans."],
+  cisgender: ["Cisgénero", "Pessoa cuja identidade de género corresponde ao sexo que lhe foi atribuído ao nascer."],
+  pronouns: ["Pronomes", "Palavras usadas para nos referirmos a alguém. Perguntar e respeitar os pronomes é uma forma simples de reconhecimento."],
+  "singular-they": ["They singular", "Em inglês, they pode ser usado por uma só pessoa; em português, cada pessoa pode indicar as formas com que se sente bem."],
+  "multiple-pronouns": ["Vários pronomes", "Algumas pessoas usam mais de um conjunto de pronomes e podem ter preferências que variam com contexto ou momento."],
+  neopronouns: ["Neopronomes", "Pronomes criados ou adaptados para permitir uma referência que não se limita às formas tradicionais."],
+  intersex: ["Intersexo", "Termo para variações naturais nas características sexuais, como cromossomas, hormonas ou anatomia, que não encaixam nas noções típicas de sexo."],
+  flinta: ["FLINTA*", "Sigla usada em alguns contextos europeus para mulheres, lésbicas, pessoas intersexo, não binárias, trans e agénero."],
+  asexual: ["Assexual", "Pessoa que sente pouca ou nenhuma atração sexual, ou que a experiencia de uma forma particular."],
+  aromantic: ["Arromântique", "Pessoa que sente pouca ou nenhuma atração romântica, ou que a experiencia de uma forma própria."],
+  bisexual: ["Bissexual", "Pessoa que pode sentir atração por mais de um género; não significa atração igual, simultânea ou por todas as pessoas."],
+  pansexual: ["Pansexual", "Pessoa cuja atração pode incluir pessoas de todos os géneros, sem que o género seja necessariamente o fator central."],
+  lesbian: ["Lésbica", "Mulher ou pessoa não binária que sente atração por mulheres; o uso do termo pertence à própria pessoa."],
+  gay: ["Gay", "Pessoa, muitas vezes homem, que sente atração por pessoas do mesmo género; também pode ser usado de forma mais ampla."],
+  "gender-identity": ["Identidade de género", "A experiência interna de cada pessoa sobre o seu género, que pode ou não corresponder ao sexo atribuído ao nascer."],
+  "gender-expression": ["Expressão de género", "A forma como alguém apresenta género por roupa, voz, gestos ou estilo, sem determinar identidade ou orientação."],
+  agender: ["Agénero", "Pessoa que não se identifica com um género, ou cuja relação com o género é ausente ou muito reduzida."],
+  genderfluid: ["Género fluido", "Identidade em que a relação com o género pode mudar ao longo do tempo ou entre contextos."],
+  genderqueer: ["Genderqueer", "Termo amplo para identidades e expressões de género que desafiam ou ultrapassam o binário."],
+  "gender-non-conforming": ["Não conforme ao género", "Pessoa cuja expressão ou vivência de género não segue as expectativas sociais associadas ao género atribuído."],
+  questioning: ["Em questionamento", "Pessoa que está a explorar identidade de género, orientação sexual ou romântica, sem obrigação de chegar depressa a um rótulo."],
+  "sexual-orientation": ["Orientação sexual", "Forma como uma pessoa pode sentir atração sexual; não determina por si só afetos, relações ou comportamento."],
+  "romantic-orientation": ["Orientação romântica", "Forma como uma pessoa pode sentir atração romântica, que pode ser diferente da orientação sexual."],
+  demisexual: ["Demissexual", "Pessoa que só pode sentir atração sexual após desenvolver uma ligação emocional forte."],
+  "coming-out": ["Assumir-se", "Partilhar a própria identidade ou orientação com outras pessoas, num processo que pode acontecer muitas vezes e nunca é obrigatório."],
+  deadnaming: ["Uso do nome anterior", "Usar um nome que uma pessoa trans deixou de usar, de forma intencional ou por descuido."],
+  transition: ["Transição", "Processo pessoal pelo qual alguém alinha vida, corpo, nome, documentos ou expressão com a sua identidade de género."],
+  "assigned-sex-at-birth": ["Sexo atribuído ao nascer", "Classificação feita ao nascer com base em características físicas; não define a identidade de género de uma pessoa."],
+  "transmasculine-transfeminine": ["Transmasculine / transfeminine", "Termos para pessoas trans cuja identidade ou expressão se aproxima do masculino ou do feminino, sem impor um único destino."],
+  "two-spirit": ["Two-Spirit", "Termo cultural específico de algumas comunidades indígenas da América do Norte; não deve ser apropriado fora desses contextos."],
+  "butch-femme": ["Butch / femme", "Termos com história em comunidades lésbicas e queer para expressões, papéis ou estéticas de género diversas."],
+  "chosen-family": ["Família escolhida", "Rede de cuidado, amizade e pertença construída por escolha, especialmente importante para muitas pessoas queer."],
+  misgendering: ["Tratamento com género errado", "Referir-se a alguém com nome, pronomes ou género que não correspondem à sua identidade."],
+  ally: ["Aliade", "Pessoa que apoia pessoas LGBTQIA+ e transforma esse apoio em escuta, ação e responsabilidade contínuas."],
+  outing: ["Expor alguém", "Revelar a identidade, orientação ou condição de uma pessoa sem o seu consentimento."],
+  "inclusive-language": ["Linguagem inclusiva", "Escolhas de linguagem que evitam presumir género, relações, corpos ou experiências e acolhem maior diversidade."],
+  intersectionality: ["Interseccionalidade", "Ideia de que experiências de discriminação e privilégio se cruzam entre género, raça, classe, deficiência e outros eixos."],
+  cisnormativity: ["Cisnormatividade", "Pressuposto social de que todas as pessoas são cisgénero e de que isso é a norma esperada."],
+  heteronormativity: ["Heteronormatividade", "Pressuposto social de que heterossexualidade e papéis binários de género são universais ou superiores."],
+  "safer-space": ["Espaço mais seguro", "Ambiente que procura reduzir danos e acolher diferenças através de regras, cuidado, acessibilidade e responsabilidade partilhada."],
+  sapphic: ["Sáfica", "Termo amplo para mulheres e algumas pessoas não binárias que sentem atração por mulheres."],
+  queerplatonic: ["Queerplatónica", "Relação com compromisso e intimidade que não se encaixa claramente nas categorias tradicionais de amizade ou romance."],
+  drag: ["Drag", "Arte performativa que brinca com género, personagem, maquilhagem, roupa e presença de palco."],
+  "trans-man-trans-woman": ["Homem trans / mulher trans", "Homem ou mulher cuja identidade de género difere do sexo atribuído ao nascer."],
+  "ace-aro-spectrum": ["Espectro ace / aro", "Conjunto de experiências assexuais e aromânticas, incluindo formas em que a atração surge de maneira rara, condicional ou variável."],
+  "graysexual-grayromantic": ["Graysexual / grayromântique", "Pessoa que sente atração sexual ou romântica raramente, fracamente ou em circunstâncias específicas."],
+  polyamory: ["Poliamor", "Forma ética de viver ou explorar mais de uma relação afetiva ou sexual com conhecimento e consentimento de todas as pessoas envolvidas."],
+  "allosexual-alloromantic": ["Alossexual / alorromântique", "Termos para pessoas que sentem atração sexual ou romântica de modo mais frequente, sem serem uma medida de normalidade."],
+  biphobia: ["Bifobia", "Preconceito, apagamento ou discriminação contra pessoas bissexuais."],
+  lesbophobia: ["Lesbofobia", "Preconceito, apagamento ou discriminação dirigido a lésbicas e, por vezes, a pessoas percebidas como tal."],
+  transphobia: ["Transfobia", "Preconceito, hostilidade ou violência contra pessoas trans, não binárias ou de género diverso."],
+  passing: ["Passabilidade", "Ser lido por outras pessoas como pertencente a um género ou grupo; pode trazer segurança em certos contextos, mas não mede autenticidade."],
+  consent: ["Consentimento", "Acordo livre, informado, específico e reversível entre pessoas; é indispensável em relações, intimidade e partilha de informação."],
+  homophobia: ["Homofobia", "Preconceito, hostilidade ou discriminação contra pessoas gays, lésbicas ou percebidas como não heterossexuais."],
+  "gender-dysphoria": ["Disforia de género", "Desconforto que algumas pessoas sentem quando corpo, tratamento social ou expectativas não correspondem à sua identidade de género."],
+  "gender-incongruence": ["Incongruência de género", "Termo usado em alguns contextos de saúde para descrever uma diferença entre identidade de género e sexo atribuído, sem definir toda a pessoa."],
+  "sex-characteristics": ["Características sexuais", "Traços físicos, hormonais, cromossómicos e anatómicos ligados ao sexo, que existem numa diversidade natural."],
+  "gender-binary": ["Binário de género", "Sistema que trata homem e mulher como as únicas possibilidades de género e ignora experiências mais diversas."],
+  bigender: ["Bigénero", "Pessoa que se identifica com dois géneros, simultaneamente ou em momentos diferentes."],
+  demigender: ["Demigénero", "Pessoa que se identifica parcialmente, mas não totalmente, com um género específico."],
+  demiromantic: ["Demirromântique", "Pessoa que só pode sentir atração romântica após criar uma ligação emocional forte."],
+  "gender-euphoria": ["Euforia de género", "Sensação de conforto, alegria ou acerto quando a identidade ou expressão de género é reconhecida de uma forma que faz sentido."],
+});
+
+export function getCompassTerms(locale) {
+  if (locale !== "pt") return COMPASS_TERMS;
+  return COMPASS_TERMS.map((term) => {
+    const [name, summary] = PORTUGUESE_COMPASS_COPY[term.slug] || [term.name, term.summary];
+    return {
+      ...term,
+      name,
+      summary,
+      type: term.category === "language" ? "Linguagem" : term.category === "community" ? "Comunidade e cultura" : term.category === "allyship" ? "Respeito e apoio" : "Identidade e vivência",
+      nuance: "O significado e o uso pertencem às pessoas e comunidades que escolhem estas palavras. Escute a autoidentificação, respeite o contexto e evite pressupostos.",
+      actions: ["Use as palavras e os pronomes escolhidos pela própria pessoa.", "Não peça explicações pessoais para validar uma identidade.", "Corrija-se com naturalidade e mantenha espaço para cada pessoa se definir."],
+      pronounGuide: term.pronounGuide ? {
+        intro: "Estes são padrões comuns em inglês, não uma lista completa. A regra mais fiável é usar a forma que cada pessoa indicar.",
+        sets: term.pronounGuide.sets.map((set) => ({
+          ...set,
+          example: ({
+            "she / her": "Em inglês: “She brought her jacket. The jacket is hers.”",
+            "he / him": "Em inglês: “He brought his jacket. The jacket is his.”",
+            "they / them": "Em inglês: “They brought their jacket. The jacket is theirs.”",
+            "ze / hir": "Em inglês: “Ze brought hir jacket. The jacket is hirs.”",
+            "xe / xem": "Em inglês: “Xe brought xyr jacket. The jacket is xyrs.”",
+            "ve / ver": "Em inglês: “Ve brought vis jacket. The jacket is vis.”",
+          })[set.label] || set.example,
+        })),
+        notes: [
+          "Vários conjuntos, como she/they ou he/they, podem significar que a pessoa gosta que ambos sejam usados. Pergunte se há preferência.",
+          "Any/all costuma indicar que vários pronomes são bem-vindos; ainda assim, não reduza a pessoa a apenas um por hábito.",
+          "Name only significa usar o nome da pessoa em vez de um pronome de terceira pessoa.",
+        ],
+      } : undefined,
+    };
+  });
+}
