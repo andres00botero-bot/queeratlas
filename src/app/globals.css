@@ -644,6 +644,18 @@ body > div:first-child {
   hyphens: auto;
 }
 
+/* Keep the editorial copy justified, but never justify display headings:
+   multi-line English titles otherwise develop oversized word gaps. */
+.qa-trust-page :is(h1, h2, h3, h4, h5, h6) {
+  text-align: left !important;
+  text-justify: auto !important;
+  hyphens: manual;
+}
+
+.qa-trust-page h1 {
+  text-wrap: balance;
+}
+
 @media (min-width: 640px) {
   .qa-now p {
     text-align: justify;

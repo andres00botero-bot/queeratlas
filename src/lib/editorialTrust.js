@@ -1,6 +1,7 @@
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
 export const EDITORIAL_LAUNCH_DATE = "2026-08-04";
+export const TRUST_REVIEW_DATE = "2026-11-18";
 
 export const EDITORIAL_TEAM = {
   id: "queer-atlas-editorial-team",
@@ -75,11 +76,13 @@ export const TRUST_PAGES = {
   about: {
     href: "/about",
     eyebrow: "About Queer Atlas",
-    title: "A living atlas for queer life",
+    seoTitle: "About Queer Atlas: LGBTQ+ Travel, Places & Local Guides",
+    lastReviewed: TRUST_REVIEW_DATE,
+    title: "Queer discovery, with context",
     description:
-      "Queer Atlas helps people understand where to go, what a place feels like, and what to check before they arrive.",
+      "Queer Atlas is an independent LGBTQ+ guide to places, events and local life, combining practical facts, editorial context and moderated community knowledge.",
     intro:
-      "We combine practical place information with editorial context and moderated community signal. The goal is not to flatten queer life into rankings, but to make discovery clearer, safer, and more human.",
+      "Queer Atlas is an independent guide to LGBTQ+ places, events, services and local life. We combine practical facts, editorial context and moderated community knowledge so people can make better decisions before they arrive.",
     accent: "cyan",
     highlights: [
       { label: "Coverage", value: "Global" },
@@ -88,28 +91,65 @@ export const TRUST_PAGES = {
     ],
     sections: [
       {
-        title: "What we are building",
-        body: "Queer Atlas is a discovery platform for venues, events, services, city context, and community knowledge. It is designed for both travelers planning ahead and locals reading the energy of their own city.",
+        id: "why",
+        title: "Why Queer Atlas exists",
+        body: "Finding queer-friendly places should not mean sorting through outdated listings, broad claims or information that ignores local realities. Queer Atlas exists to make local discovery more legible: where to go, what to check and what context may matter before you arrive.",
+      },
+      {
+        id: "purpose",
+        title: "What Queer Atlas is for",
+        body: "We help people plan a night, choose a place, understand a city and find relevant community resources. The atlas is made for travellers planning ahead and locals reading the energy of their own city—not for turning queer life into a generic ranking.",
         bullets: [
           "Practical venue and event intelligence, not generic directory copy.",
           "City context that connects nightlife, community, movement, and safety.",
-          "A correction and contribution system that lets local knowledge improve the atlas.",
+          "Volunteer and community contributions that help local knowledge improve the atlas.",
         ],
       },
       {
-        title: "Our editorial point of view",
-        body: "Queer spaces are not interchangeable. A useful guide should explain who a place tends to work for, how the night usually moves, and where information may change quickly.",
-        note: "We separate confirmed facts, editorial interpretation, and community signal whenever that distinction matters.",
+        id: "method",
+        title: "Useful information needs a clear standard",
+        body: "Queer spaces are not interchangeable. A useful guide explains who a place may work for, how a night tends to move and which details can change quickly. We label the difference between confirmed facts, editorial interpretation and community signal whenever it matters.",
+        note: "Addresses, hours and event details are checked differently from atmosphere, access and lived experience. Read our verification standard for the full method.",
       },
       {
+        id: "volunteers",
+        title: "Built with volunteers and local knowledge",
+        body: "Queer Atlas is strengthened by volunteers who contribute local knowledge, research leads, translations and corrections. Their work helps the atlas stay closer to the communities and places it describes.",
+        bullets: [
+          "Volunteers can flag changes, suggest places and share useful source material.",
+          "A contribution is reviewed before it is published as an editorial claim or verified fact.",
+          "Volunteer participation never turns one person’s experience into a claim about an entire community.",
+        ],
+        note: "We credit contributors where appropriate and protect privacy when public attribution is not wanted or could create a safety risk.",
+      },
+      {
+        id: "accountability",
+        title: "Independent, accountable and open to correction",
+        body: "Our editorial desk is responsible for the standards behind the atlas. Commercial relationships do not buy recommendations, significant changes are recorded, and readers, venue owners and contributors can challenge a factual claim with evidence.",
+        bullets: [
+          "Editorial standards and conflicts are published openly.",
+          "Safety, closure and identity-based exclusion reports are prioritised.",
+          "Material corrections receive a visible update record.",
+        ],
+      },
+      {
+        id: "independence",
+        title: "Funding and editorial independence",
+        body: "We are transparent about influence. Editorial rankings and safety-related judgments are not for sale. If a partnership, sponsorship, grant or other material relationship affects published work, it should be disclosed close to that work so readers can judge the context for themselves.",
+        note: "Support helps sustain research, verification and product development; it never guarantees a listing, a positive recommendation or the removal of accurate criticism.",
+      },
+      {
+        id: "people",
         title: "Who Queer Atlas serves",
-        body: "The atlas is built for LGBTQ+ people across identities, ages, travel styles, budgets, and comfort levels. Inclusion is treated as a practical product requirement, not a decorative label.",
+        body: "The atlas is built for LGBTQ+ people across identities, ages, travel styles, budgets and comfort levels. Inclusion is a practical product requirement: it shapes what information we look for, how we describe it and what we do when a reader flags a gap.",
       },
     ],
   },
   "editorial-policy": {
     href: "/editorial-policy",
     eyebrow: "Editorial standards",
+    seoTitle: "Editorial Policy",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Independent, useful, accountable",
     description:
       "The principles used when Queer Atlas researches, writes, reviews, and updates editorial guidance.",
@@ -122,6 +162,11 @@ export const TRUST_PAGES = {
       { label: "Corrections", value: "Visible" },
     ],
     sections: [
+      {
+        id: "ownership",
+        title: "Editorial ownership and review",
+        body: "The Queer Atlas editorial desk owns these standards and the decision to publish, amend or remove editorial guidance. Where an individual editor or local contributor has shaped a guide, that role should be attributed on the relevant page when it is safe and consented to.",
+      },
       {
         title: "Editorial independence",
         body: "Advertising, partnerships, complimentary access, or venue relationships must not buy a positive recommendation or suppress a relevant concern. Material relationships should be disclosed close to the content they affect.",
@@ -149,6 +194,8 @@ export const TRUST_PAGES = {
   verification: {
     href: "/verification",
     eyebrow: "How we verify",
+    seoTitle: "How Queer Atlas Verifies LGBTQ+ Places & Events",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "From signal to publishable information",
     description:
       "A practical verification standard for venues, events, services, guides, and reports.",
@@ -162,6 +209,16 @@ export const TRUST_PAGES = {
     ],
     sections: [
       {
+        id: "status-labels",
+        title: "What our status labels mean",
+        bullets: [
+          "Verified means a core claim has been checked against appropriate, current evidence; it is not a guarantee of a future experience.",
+          "Editorial context is Queer Atlas interpretation based on sourced facts, local research and clearly qualified judgment.",
+          "Community signal is moderated lived experience or recurring feedback; it is not presented as independently confirmed fact.",
+          "Needs updating means a time-sensitive claim should be checked again before a reader relies on it.",
+        ],
+      },
+      {
         title: "The verification ladder",
         bullets: [
           "Confirm the identity of the place, event, or service and use its exact canonical route.",
@@ -170,6 +227,16 @@ export const TRUST_PAGES = {
           "Use reviews and community accounts to identify recurring patterns, not isolated verdicts.",
           "Record when research was checked and soften or withhold claims that remain uncertain.",
         ],
+      },
+      {
+        id: "review-cycle",
+        title: "From submission to re-check",
+        bullets: [
+          "A listing or report is matched to the correct place, event or service before it is assessed.",
+          "Core claims are checked against the strongest suitable sources and the research date is recorded where it matters.",
+          "New evidence, corrections and high-risk reports can trigger a re-check, qualification or temporary withholding of a claim.",
+        ],
+        note: "A verified listing can still change overnight. Readers should confirm opening, access and event details directly when those details affect a decision.",
       },
       {
         title: "What changes quickly",
@@ -185,6 +252,8 @@ export const TRUST_PAGES = {
   "sources-and-reviews": {
     href: "/sources-and-reviews",
     eyebrow: "Source & review policy",
+    seoTitle: "Sources & Reviews Policy",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Many signals, one accountable judgment",
     description:
       "How Queer Atlas uses official pages, independent reporting, specialist guides, reviews, and community accounts.",
@@ -198,6 +267,16 @@ export const TRUST_PAGES = {
     ],
     sections: [
       {
+        id: "claim-fit",
+        title: "The source must fit the claim",
+        bullets: [
+          "Official sources are preferred for addresses, hours, tickets, accessibility statements and scheduled events.",
+          "Independent reporting and specialist guides add local or historical context that an operator cannot verify alone.",
+          "Reviews and community accounts can describe repeated experience patterns, but they do not verify a single allegation by themselves.",
+          "Safety and legal claims require stronger, current authority than atmosphere or style.",
+        ],
+      },
+      {
         title: "Source hierarchy",
         bullets: [
           "Official venue, organizer, government, transport, or rights-body information for direct facts.",
@@ -205,6 +284,11 @@ export const TRUST_PAGES = {
           "Current review platforms, forums, and community accounts for recurring experience signals.",
           "Queer Atlas community submissions after moderation and confidence review.",
         ],
+      },
+      {
+        id: "freshness",
+        title: "Recency, uncertainty and missing evidence",
+        body: "Time-sensitive information loses weight as it ages. When current evidence is missing or contradictory, we qualify the wording, ask readers to confirm directly or remove the claim rather than preserving an appealing but unreliable detail.",
       },
       {
         title: "How reviews may be used",
@@ -224,6 +308,8 @@ export const TRUST_PAGES = {
   "community-policy": {
     href: "/community-policy",
     eyebrow: "Community moderation",
+    seoTitle: "Community Moderation Policy",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Protect the signal, protect the people",
     description:
       "The participation and moderation rules used across stories, guides, messages, reviews, listings, and reports.",
@@ -236,6 +322,16 @@ export const TRUST_PAGES = {
       { label: "Enforcement", value: "Proportionate" },
     ],
     sections: [
+      {
+        id: "report-status",
+        title: "What happens after a report",
+        bullets: [
+          "A report is received with its context and category; urgent safety or identity-based harm can be escalated for review.",
+          "The case may be assessed as requiring more information, a correction, a visibility limit, removal or no action.",
+          "A decision can be revisited when meaningful new evidence is supplied.",
+        ],
+        note: "Reports are not an emergency service and are not monitored live. If someone is in immediate danger, contact local emergency services first.",
+      },
       {
         title: "What is not allowed",
         bullets: [
@@ -255,6 +351,11 @@ export const TRUST_PAGES = {
         ],
       },
       {
+        id: "appeals",
+        title: "Appeals and reconsideration",
+        body: "A person affected by a high-impact moderation decision or a significant factual claim may submit relevant context or evidence through the contact desk. Where practical, a different reviewer should assess the dispute.",
+      },
+      {
         title: "Fairness and appeals",
         body: "People may contact Queer Atlas if they believe a moderation decision or factual claim is wrong. A different reviewer should assess disputed high-impact decisions where practical.",
       },
@@ -267,6 +368,8 @@ export const TRUST_PAGES = {
   corrections: {
     href: "/corrections",
     eyebrow: "Corrections & updates",
+    seoTitle: "Corrections & Updates Policy",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Make the atlas better, visibly",
     description:
       "How to report an error and how Queer Atlas records meaningful editorial changes.",
@@ -279,6 +382,14 @@ export const TRUST_PAGES = {
       { label: "Material changes", value: "Logged" },
     ],
     sections: [
+      {
+        id: "public-record",
+        title: "Public change record",
+        body: "Material policy and editorial updates are recorded here with the date and a short explanation. Listing-level corrections should appear on the affected page when they materially change meaning, safety, access or availability.",
+        bullets: [
+          "18 November 2026 — clarified verification labels, review process, source freshness, moderation status and contributor transparency across the Trust Center.",
+        ],
+      },
       {
         title: "What to send",
         bullets: [
@@ -305,6 +416,8 @@ export const TRUST_PAGES = {
   contributors: {
     href: "/contributors",
     eyebrow: "People behind the atlas",
+    seoTitle: "Contributors & Editorial Team",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Editors, researchers, and local signal",
     description:
       "The editorial roles and contributor standards behind Queer Atlas guidance.",
@@ -317,6 +430,12 @@ export const TRUST_PAGES = {
       { label: "Contributor status", value: "Reviewed" },
     ],
     sections: [
+      {
+        id: "volunteers",
+        title: "Volunteer contribution, with accountability",
+        body: "Volunteers can add local knowledge, research leads, translations and corrections. Their contribution is valuable, but it does not bypass source review, moderation or editorial responsibility.",
+        note: "Profiles are public only with consent. Contributors may remain private when attribution could create a safety or privacy risk.",
+      },
       {
         id: "queer-atlas-editorial-team",
         title: EDITORIAL_TEAM.name,
@@ -341,6 +460,8 @@ export const TRUST_PAGES = {
   contact: {
     href: "/contact",
     eyebrow: "Contact & press",
+    seoTitle: "Contact & Press",
+    lastReviewed: TRUST_REVIEW_DATE,
     title: "Talk to Queer Atlas",
     description:
       "Contact the editorial desk about corrections, safety concerns, partnerships, interviews, data, or press.",
@@ -354,6 +475,11 @@ export const TRUST_PAGES = {
     ],
     sections: [
       {
+        id: "urgent-safety",
+        title: "Urgent safety concerns",
+        body: "Use the safety route to flag information that could expose someone to harm, discrimination, closure or serious access risk. Queer Atlas reports are not monitored live; if someone is in immediate danger, contact local emergency services first.",
+      },
+      {
         title: "Editorial and corrections",
         body: "Send the exact page URL, the disputed detail, and the strongest supporting reference you have. Mark urgent safety or closure issues clearly.",
       },
@@ -361,6 +487,11 @@ export const TRUST_PAGES = {
         title: "Press and partnerships",
         body: "For interviews, data questions, destination work, collaborations, and commercial enquiries, explain your organization, deadline, intended use, and the cities or topics involved.",
         note: "Email is also available at admin@queeratlas.app. The contact form creates a trackable reference for your message.",
+      },
+      {
+        id: "press-kit",
+        title: "Press information",
+        body: "For a press request, include your publication, deadline, intended use and the cities or topics involved. Queer Atlas can provide a short description of the platform, current coverage figures and approved brand assets on request.",
       },
     ],
   },
@@ -375,11 +506,11 @@ export function buildTrustMetadata(key = "") {
   if (!page) return {};
 
   return {
-    title: page.eyebrow,
+    title: page.seoTitle || page.eyebrow,
     description: page.description,
     alternates: { canonical: page.href },
     openGraph: {
-      title: `${page.eyebrow} | Queer Atlas`,
+      title: page.seoTitle || `${page.eyebrow} | Queer Atlas`,
       description: page.description,
       url: `${QA_SITE_URL}${page.href}`,
       siteName: "Queer Atlas",
@@ -387,7 +518,7 @@ export function buildTrustMetadata(key = "") {
     },
     twitter: {
       card: "summary_large_image",
-      title: `${page.eyebrow} | Queer Atlas`,
+      title: page.seoTitle || `${page.eyebrow} | Queer Atlas`,
       description: page.description,
     },
   };

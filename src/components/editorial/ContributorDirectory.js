@@ -1,5 +1,6 @@
 import { serializeJsonLd } from "@/lib/jsonLd";
 import { Languages, MapPin, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { listPublishedEditorialPeople } from "@/lib/editorialData";
 import { QA_SITE_URL } from "@/lib/seo/entityAuthority";
 
@@ -17,7 +18,20 @@ export default async function ContributorDirectory() {
     (person) => person.id !== "queer-atlas-editorial-team",
   );
 
-  if (people.length === 0) return null;
+  if (people.length === 0) {
+    return (
+      <section className="border-t border-white/10 py-8 sm:py-10">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-100/62">Public directory</p>
+        <h2 className="mt-2 text-xl font-semibold tracking-[-0.02em] text-white">Named contributor profiles are being added carefully</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-7 text-white/66">
+          We publish a profile only when its name, role, bio and public attribution have been verified and consented to. Until then, the editorial desk remains accountable for published guidance.
+        </p>
+        <Link href="/contribute" className="mt-4 inline-flex items-center text-sm font-semibold text-violet-100 transition hover:text-white">
+          Explore ways to contribute →
+        </Link>
+      </section>
+    );
+  }
 
   const jsonLd = {
     "@context": "https://schema.org",
