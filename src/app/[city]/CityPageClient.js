@@ -151,7 +151,7 @@ function getSearchParameter(searchParams, key) {
   return typeof searchParams?.get === "function" ? String(searchParams.get(key) || "") : "";
 }
 
-export default function CityPageClient() {
+export default function CityPageClient({ indexableContent = null }) {
   const { locale } = useLocale();
   const isMapboxStylesReady = useMapboxStylesheet();
   const config = useCityRouteConfig();
@@ -5741,6 +5741,8 @@ export default function CityPageClient() {
                   />
                 </div>
               </div>
+
+              {indexableContent}
             </section>
           </div>
         </div>

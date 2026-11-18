@@ -22,10 +22,10 @@ async function loadCitySearchPreview(city) {
     return {
       venues: (placesResult?.data || [])
         .filter((venue) => isPublishedEntity(venue) && evaluateVenueSeoQuality(venue).indexable)
-        .slice(0, 12),
+        .slice(0, 3),
       events: (eventsResult?.data || [])
         .filter((event) => isUpcomingPublishedEvent(event) && evaluateEventSeoQuality(event).indexable)
-        .slice(0, 12),
+        .slice(0, 2),
     };
   } catch {
     // The interactive guide remains available if the SEO preview cannot load.
@@ -43,15 +43,16 @@ export default async function CityPage({ params }) {
   const preview = await loadCitySearchPreview(city);
 
   return (
-    <>
-      <CityPageClient />
-      <CityIndexableContent
+    <CityPageClient
+      indexableContent={
+        <CityIndexableContent
         city={city}
         cityName={cityNameFromConfig(config, city)}
-        guide={Array.isArray(config?.guide) ? config.guide.slice(0, 3) : []}
+        guide={Array.isArray(config?.guide) ? config.guide.slice(0, 1) : []}
         venues={preview.venues}
         events={preview.events}
-      />
-    </>
+        />
+      }
+    />
   );
 }

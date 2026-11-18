@@ -6,75 +6,80 @@ import { isVenueAccessRestricted } from "@/lib/venueAccessPolicy";
 import { evaluateEventSeoQuality, evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 
 const COPY = {
-  en: { guide: "City guide", venues: "Trusted queer venues", events: "Upcoming queer events", moreVenues: "Explore all venues", moreEvents: "Explore all events", noVenues: "Venue details are protected for this destination.", noEvents: "No upcoming published events yet." },
-  es: { guide: "Guía de la ciudad", venues: "Lugares queer de confianza", events: "Próximos eventos queer", moreVenues: "Explorar todos los lugares", moreEvents: "Explorar todos los eventos", noVenues: "Los detalles de los lugares están protegidos para este destino.", noEvents: "Aún no hay eventos publicados próximos." },
-  de: { guide: "Stadtguide", venues: "Vertrauenswürdige queere Orte", events: "Kommende queere Events", moreVenues: "Alle Orte entdecken", moreEvents: "Alle Events entdecken", noVenues: "Ortsdetails sind für dieses Reiseziel geschützt.", noEvents: "Derzeit gibt es keine veröffentlichten kommenden Events." },
-  fr: { guide: "Guide de la ville", venues: "Lieux queer de confiance", events: "Prochains événements queer", moreVenues: "Explorer tous les lieux", moreEvents: "Explorer tous les événements", noVenues: "Les détails des lieux sont protégés pour cette destination.", noEvents: "Aucun événement à venir n’est encore publié." },
+  en: { overview: "{city} at a glance", places: "Places to explore", events: "Coming up", moreVenues: "View all {city} venues", moreEvents: "View all {city} events", noVenues: "Venue details are protected for this destination.", noEvents: "No upcoming published events yet." },
+  es: { overview: "{city} de un vistazo", places: "Lugares para explorar", events: "Próximamente", moreVenues: "Ver todos los lugares de {city}", moreEvents: "Ver todos los eventos de {city}", noVenues: "Los detalles de los lugares están protegidos para este destino.", noEvents: "Aún no hay eventos publicados próximos." },
+  de: { overview: "{city} im Überblick", places: "Orte zum Entdecken", events: "Demnächst", moreVenues: "Alle Orte in {city} ansehen", moreEvents: "Alle Events in {city} ansehen", noVenues: "Ortsdetails sind für dieses Reiseziel geschützt.", noEvents: "Derzeit gibt es keine veröffentlichten kommenden Events." },
+  fr: { overview: "{city} en bref", places: "Lieux à découvrir", events: "À venir", moreVenues: "Voir tous les lieux à {city}", moreEvents: "Voir tous les événements à {city}", noVenues: "Les détails des lieux sont protégés pour cette destination.", noEvents: "Aucun événement à venir n’est encore publié." },
 };
 
 function text(locale) {
   return COPY[locale] || COPY.en;
 }
 
-function preview(items, count = 12) {
+function preview(items, count) {
   return items.slice(0, count);
+}
+
+function compactText(value, limit = 300) {
+  const textValue = String(value || "").replace(/\s+/g, " ").trim();
+  if (textValue.length <= limit) return textValue;
+  const cutoff = textValue.lastIndexOf(" ", limit - 1);
+  return `${textValue.slice(0, cutoff > 0 ? cutoff : limit).trim()}…`;
+}
+
+function copyWithCity(value, cityName) {
+  return String(value || "").replace("{city}", cityName);
 }
 
 export default function CityIndexableContent({ city, cityName, locale = "en", guide = [], venues = [], events = [] }) {
   const copy = text(locale);
   const restricted = isVenueAccessRestricted(city);
-  const cityVenues = preview(venues.filter((venue) => normalizeCitySlug(venue?.city) === city && evaluateVenueSeoQuality(venue).indexable));
-  const cityEvents = preview(events.filter((event) => normalizeCitySlug(event?.city) === city && isUpcomingPublishedEvent(event) && evaluateEventSeoQuality(event).indexable));
+  const cityVenues = preview(venues.filter((venue) => normalizeCitySlug(venue?.city) === city && evaluateVenueSeoQuality(venue).indexable), 3);
+  const cityEvents = preview(events.filter((event) => normalizeCitySlug(event?.city) === city && isUpcomingPublishedEvent(event) && evaluateEventSeoQuality(event).indexable), 2);
   const cityPath = localePath(`/${city}`, locale);
+  const guideEntry = guide.find(Boolean);
+  const guideTitle = typeof guideEntry === "object" ? String(guideEntry?.title || "").trim() : "";
+  const guideText = compactText(typeof guideEntry === "object" ? guideEntry?.text || guideEntry?.description : guideEntry);
 
   return (
-    <section className="mx-auto w-full max-w-6xl px-4 py-10 text-white sm:px-6" aria-label={`${cityName} search guide`}>
-      <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-7">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{cityName}</h1>
+    <section className="mt-10 border-t border-white/10 pt-8 text-white" aria-label={`${cityName} guide and directory links`}>
+      {guideText ? (
+        <div className="max-w-3xl">
+          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">{copyWithCity(copy.overview, cityName)}</h2>
+          {guideTitle ? <p className="mt-3 text-sm font-medium text-white/90">{guideTitle}</p> : null}
+          <p className="mt-2 text-sm leading-6 text-white/70">{guideText}</p>
+        </div>
+      ) : null}
 
-        {guide.length > 0 ? (
-          <section className="mt-7" aria-labelledby="city-guide-heading">
-            <h2 id="city-guide-heading" className="text-xl font-semibold">{copy.guide}</h2>
-            <div className="mt-3 space-y-3 text-sm leading-6 text-white/75">
-              {guide.map((entry, index) => {
-                const title = typeof entry === "object" ? String(entry?.title || "").trim() : "";
-                const body = typeof entry === "object" ? String(entry?.text || entry?.description || "").trim() : String(entry || "").trim();
-                if (!body) return null;
-                return <article key={`${city}-guide-${index}`}>{title ? <h3 className="font-medium text-white">{title}</h3> : null}<p>{body}</p></article>;
-              })}
-            </div>
-          </section>
-        ) : null}
-
-        <section className="mt-8" aria-labelledby="city-venues-heading">
-          <h2 id="city-venues-heading" className="text-xl font-semibold">{copy.venues}</h2>
-          {restricted ? <p className="mt-3 text-sm text-white/70">{copy.noVenues}</p> : (
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={`grid gap-8 ${guideText ? "mt-8" : ""} lg:grid-cols-2`}>
+        <section aria-labelledby="city-venues-heading">
+          <h2 id="city-venues-heading" className="text-base font-semibold text-white">{copy.places}</h2>
+          {restricted ? <p className="mt-3 text-sm text-white/70">{copy.noVenues}</p> : cityVenues.length ? (
+            <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
               {cityVenues.map((venue) => (
-                <li key={String(venue.id)} className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                <li key={String(venue.id)} className="py-3 first:pt-3 last:pb-3">
                   <Link href={localePath(buildVenuePath(city, venue), locale)} className="font-medium text-cyan-100 underline-offset-4 hover:underline">{venue.name}</Link>
-                  {venue.description ? <p className="mt-1 text-sm leading-5 text-white/65">{String(venue.description)}</p> : null}
+                  {venue.type ? <p className="mt-0.5 text-xs text-white/55">{String(venue.type)}</p> : null}
                 </li>
               ))}
             </ul>
-          )}
-          <Link href={`${cityPath}/directory`} className="mt-4 inline-flex text-sm font-medium text-cyan-100 underline underline-offset-4">{copy.moreVenues}</Link>
+          ) : <p className="mt-3 text-sm text-white/70">{copy.noVenues}</p>}
+          <Link href={`${cityPath}/directory`} className="mt-4 inline-flex text-sm font-medium text-cyan-100 underline underline-offset-4">{copyWithCity(copy.moreVenues, cityName)}</Link>
         </section>
 
-        <section className="mt-8" aria-labelledby="city-events-heading">
-          <h2 id="city-events-heading" className="text-xl font-semibold">{copy.events}</h2>
+        <section aria-labelledby="city-events-heading">
+          <h2 id="city-events-heading" className="text-base font-semibold text-white">{copy.events}</h2>
           {cityEvents.length ? (
-            <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="mt-3 divide-y divide-white/10 border-y border-white/10">
               {cityEvents.map((event) => (
-                <li key={String(event.id)} className="rounded-2xl border border-white/10 bg-black/15 p-4">
+                <li key={String(event.id)} className="py-3 first:pt-3 last:pb-3">
                   <Link href={localePath(buildEventPath(city, event), locale)} className="font-medium text-violet-100 underline-offset-4 hover:underline">{event.name}</Link>
-                  {event.startDate || event.date ? <p className="mt-1 text-sm text-white/65">{String(event.startDate || event.date)}</p> : null}
-                  {event.description ? <p className="mt-1 text-sm leading-5 text-white/65">{String(event.description)}</p> : null}
+                  {event.startDate || event.date ? <p className="mt-0.5 text-xs text-white/55">{String(event.startDate || event.date)}</p> : null}
                 </li>
               ))}
             </ul>
           ) : <p className="mt-3 text-sm text-white/70">{copy.noEvents}</p>}
-          <Link href={`${cityPath}/events`} className="mt-4 inline-flex text-sm font-medium text-violet-100 underline underline-offset-4">{copy.moreEvents}</Link>
+          <Link href={`${cityPath}/events`} className="mt-4 inline-flex text-sm font-medium text-violet-100 underline underline-offset-4">{copyWithCity(copy.moreEvents, cityName)}</Link>
         </section>
       </div>
     </section>
