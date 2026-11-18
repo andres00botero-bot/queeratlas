@@ -783,6 +783,17 @@ body > div:first-child {
   color: rgba(220, 239, 242, 0.72);
 }
 
+/* Navigation cards are too narrow for justified label copy. Keep their text
+   naturally spaced without changing the justified editorial city copy. */
+@media (min-width: 640px) {
+  .qa-city .qa-city-explorer .qa-city-explorer-action p {
+    text-align: left !important;
+    text-align-last: left;
+    text-justify: auto !important;
+    hyphens: manual;
+  }
+}
+
 @container (max-width: 390px) {
   .qa-city-panel-cq {
     border-radius: 1.05rem;

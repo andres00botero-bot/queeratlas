@@ -307,7 +307,7 @@ export default function CityQuickNavigation({
             aria-label={item.key === "venues" ? (venueAccessRestricted ? "Venues — details protected" : "Venues — choose a category") : undefined}
             aria-expanded={item.key === "venues" && !venueAccessRestricted ? showVenuePicker : undefined}
             aria-controls={item.key === "venues" && !venueAccessRestricted ? "city-venue-picker" : undefined}
-            className={`qa-cinematic-hover flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance}`}
+            className={`qa-cinematic-hover qa-city-explorer-action flex min-h-[3.5rem] min-w-0 flex-col items-center justify-center rounded-xl px-1.5 py-2 text-center text-xs transition sm:min-h-[5.1rem] sm:items-stretch sm:rounded-2xl sm:px-4 sm:py-3 sm:text-left sm:text-sm ${itemAppearance}`}
           >
             <p className="flex items-center gap-2 text-[10px] uppercase tracking-[0.14em] opacity-72">
               <Icon className="h-3.5 w-3.5" aria-hidden="true" />
