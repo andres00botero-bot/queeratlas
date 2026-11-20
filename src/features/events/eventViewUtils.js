@@ -32,6 +32,7 @@ export function mapGlobalEventRow(row) {
     date: row.start_date || row.date || "",
     start_date: row.start_date || row.date || "",
     end_date: row.end_date || row.start_date || row.date || "",
+    hours: row.hours || "",
     location: row.location || "",
     vibe: vibeValue,
     vibe_tags: vibeTags,

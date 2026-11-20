@@ -17,6 +17,9 @@ function buildFallbackPayload(payload, error) {
   const missingEventStatus =
     errorText.includes("event_status") &&
     (errorText.includes("column") || errorText.includes("schema cache"));
+  const missingHours =
+    errorText.includes("hours") &&
+    (errorText.includes("column") || errorText.includes("schema cache"));
 
   let fallbackPayload = { ...payload };
   if (missingVibeColumn) {
@@ -42,6 +45,9 @@ function buildFallbackPayload(payload, error) {
 
   if (missingEventStatus) {
     delete fallbackPayload.event_status;
+  }
+  if (missingHours) {
+    delete fallbackPayload.hours;
   }
 
   return fallbackPayload;

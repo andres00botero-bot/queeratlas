@@ -51,6 +51,12 @@ export default function GlobalEventForm({
       <p className="text-[11px] text-white/50 md:col-span-2">
         Use a single-day event by leaving <span className="font-medium text-white/70">To</span> empty.
       </p>
+      <input
+        value={globalForm.hours || ""}
+        onChange={(event) => setGlobalForm((current) => ({ ...current, hours: event.target.value }))}
+        className="rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-cyan-300/30 md:col-span-2"
+        placeholder="Opening hours (for example Doors 20:00–03:00)"
+      />
       <label className="md:col-span-2">
         <span className="mb-1 block text-[11px] uppercase tracking-[0.12em] text-white/55">Event status</span>
         <select

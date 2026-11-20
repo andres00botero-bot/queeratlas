@@ -97,6 +97,7 @@ export function buildEventAdminDraft(event) {
     name: String(event?.name || ""),
     startDate: String(normalized.startDate || ""),
     endDate: String(normalized.endDate || ""),
+    hours: String(event?.hours || ""),
     location: String(event?.location || ""),
     lat: normalizeOptionalCoordinate(event?.lat),
     lng: normalizeOptionalCoordinate(event?.lng),

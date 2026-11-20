@@ -427,6 +427,12 @@ export default async function CityEventDetailPage({ params }) {
               <span className="text-white/55">Address:</span>{" "}
               {String(event?.location || cityName)}
             </p>
+            {event?.hours ? (
+              <p>
+                <span className="text-white/55">Opening hours:</span>{" "}
+                {String(event.hours)}
+              </p>
+            ) : null}
             <p>
               <span className="text-white/55">Canonical:</span>{" "}
               <a

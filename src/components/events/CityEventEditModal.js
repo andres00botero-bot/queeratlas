@@ -52,6 +52,12 @@ export default function CityEventEditModal({
                 />
               </div>
             </div>
+            <input
+              value={draft.hours || ""}
+              onChange={(event) => setDraft((current) => ({ ...current, hours: event.target.value }))}
+              className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/34 focus:border-emerald-300/30"
+              placeholder="Opening hours (for example Doors 20:00–03:00)"
+            />
 
             <label className="block">
               <span className="mb-1 block text-[11px] uppercase tracking-[0.12em] text-white/55">Event status</span>

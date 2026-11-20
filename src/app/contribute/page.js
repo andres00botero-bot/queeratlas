@@ -308,6 +308,7 @@ export default function ContributePage() {
     lng: null,
     location_source: "",
     date: "",
+    hours: "",
     description: "",
     link: "",
     ticket_url: "",
@@ -1002,6 +1003,7 @@ export default function ContributePage() {
         date: startDate,
         start_date: startDate,
         end_date: startDate,
+        hours: String(eventForm.hours || "").trim() || null,
         location: eventForm.address,
         ...buildVibeDualWriteFields({
           vibe: eventForm.vibe,
@@ -1050,6 +1052,7 @@ export default function ContributePage() {
           lng: null,
           location_source: "",
           date: "",
+          hours: "",
           description: "",
           link: "",
           ticket_url: "",
@@ -1085,8 +1088,11 @@ export default function ContributePage() {
         const missingTicketUrl =
           errorText.includes("ticket_url") &&
           (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingHours =
+          errorText.includes("hours") &&
+          (errorText.includes("column") || errorText.includes("schema cache"));
 
-        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl) {
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingHours) {
           const legacyPayload = {
             name: eventForm.name,
             city: cityName,
@@ -1149,6 +1155,7 @@ export default function ContributePage() {
         lng: null,
         location_source: "",
         date: "",
+        hours: "",
         description: "",
         link: "",
         ticket_url: "",
@@ -2052,6 +2059,7 @@ export default function ContributePage() {
                   className="w-full rounded-xl border border-gray-700 bg-black px-4 py-3 text-sm outline-none transition focus:border-white/50"
                   tone="violet"
                   />
+                  <Field value={eventForm.hours || ""} onChange={(event) => setEventForm((current) => ({ ...current, hours: event.target.value }))} placeholder="Opening hours (for example Doors 20:00–03:00)" />
                   <Field value={eventForm.link} onChange={(event) => setEventForm((current) => ({ ...current, link: event.target.value }))} placeholder="Event link (optional)" />
                   <label className="block rounded-xl border border-emerald-200/28 bg-emerald-200/[0.10] p-3">
                     <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-100">

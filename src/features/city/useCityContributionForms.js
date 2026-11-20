@@ -25,6 +25,7 @@ export function useCityContributionForms() {
   const [eventLocation, setEventLocation] = useState(null);
   const [eventStartDate, setEventStartDate] = useState("");
   const [eventEndDate, setEventEndDate] = useState("");
+  const [eventHours, setEventHours] = useState("");
   const [eventVibe, setEventVibe] = useState("");
   const [eventVibeTags, setEventVibeTags] = useState([]);
   const [eventDescription, setEventDescription] = useState("");
@@ -59,6 +60,7 @@ export function useCityContributionForms() {
     setEventLocation(null);
     setEventStartDate("");
     setEventEndDate("");
+    setEventHours("");
     setEventVibe("");
     setEventVibeTags([]);
     setEventDescription("");
@@ -110,6 +112,8 @@ export function useCityContributionForms() {
     setEventStartDate,
     eventEndDate,
     setEventEndDate,
+    eventHours,
+    setEventHours,
     eventVibe,
     setEventVibe,
     eventVibeTags,

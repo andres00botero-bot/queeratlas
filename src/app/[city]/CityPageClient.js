@@ -290,6 +290,8 @@ export default function CityPageClient({ indexableContent = null }) {
     setEventStartDate,
     eventEndDate,
     setEventEndDate,
+    eventHours,
+    setEventHours,
     eventVibe,
     setEventVibe,
     eventVibeTags,
@@ -3508,6 +3510,7 @@ export default function CityPageClient({ indexableContent = null }) {
         date: startDate,
         start_date: startDate,
         end_date: endDate || startDate,
+        hours: eventHours.trim() || null,
         location: eventAddress,
         ...buildVibeDualWriteFields({
           vibe: eventVibe,
@@ -3579,13 +3582,15 @@ export default function CityPageClient({ indexableContent = null }) {
           errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
         const missingEventIntel =
           errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
+        const missingHours =
+          errorText.includes("hours") && (errorText.includes("column") || errorText.includes("schema cache"));
 
         if (missingEventIntel && hasRequestedEventIntel) {
           showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
           return;
         }
 
-        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
+        if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel || missingHours) {
           const legacyPayload = {
             name: eventName,
             city,
@@ -4689,6 +4694,7 @@ export default function CityPageClient({ indexableContent = null }) {
           dressCode: eventAdminDraft.dress_code,
           hostInclusivity: eventAdminDraft.host_inclusivity,
         }),
+        hours: String(eventAdminDraft.hours || "").trim() || null,
       };
       const hasRequestedEventIntel = hasEventIntel(payload.event_intel);
 
@@ -4714,13 +4720,15 @@ export default function CityPageClient({ indexableContent = null }) {
             errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingEventIntel =
             errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingHours =
+            errorText.includes("hours") && (errorText.includes("column") || errorText.includes("schema cache"));
 
           if (missingEventIntel && hasRequestedEventIntel) {
             showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
             return;
           }
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel || missingHours) {
             const legacyPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -4789,13 +4797,15 @@ export default function CityPageClient({ indexableContent = null }) {
             errorText.includes("ticket_url") && (errorText.includes("column") || errorText.includes("schema cache"));
           const missingEventIntel =
             errorText.includes("event_intel") && (errorText.includes("column") || errorText.includes("schema cache"));
+          const missingHours =
+            errorText.includes("hours") && (errorText.includes("column") || errorText.includes("schema cache"));
 
           if (missingEventIntel && hasRequestedEventIntel) {
             showToast("Run supabase/entity-intelligence-v2.sql before saving event intelligence.", { tone: "warn", duration: 3600 });
             return;
           }
 
-          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel) {
+          if (missingDateRange || missingVibe || missingVibeTags || missingLocation || missingTicketUrl || missingEventIntel || missingHours) {
             const legacyInsertPayload = {
               name: eventAdminDraft.name.trim(),
               date: startDate,
@@ -5352,6 +5362,8 @@ export default function CityPageClient({ indexableContent = null }) {
                   setEventStartDate,
                   eventEndDate,
                   setEventEndDate,
+                  eventHours,
+                  setEventHours,
                   eventEntryWait,
                   setEventEntryWait,
                   eventBestArrival,

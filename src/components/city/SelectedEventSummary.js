@@ -36,6 +36,11 @@ export default function SelectedEventSummary({
       <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Address: {getEntityAddressLabel(selectedEvent)}
       </p>
+      {selectedEvent.hours && (
+        <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
+          Opening hours: {selectedEvent.hours}
+        </p>
+      )}
       <SelectedEntityMiniMap entity={selectedEvent} kind="event" onExpand={showEventOnMap} />
       {liveSignal}
       <div className="mb-3 h-1.5 w-24 rounded-full bg-gradient-to-r from-violet-300 via-fuchsia-300 to-cyan-200" />

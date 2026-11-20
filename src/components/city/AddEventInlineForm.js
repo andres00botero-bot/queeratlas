@@ -28,6 +28,8 @@ export default function AddEventInlineForm({
   setEventStartDate,
   eventEndDate,
   setEventEndDate,
+  eventHours,
+  setEventHours,
   eventEntryWait,
   setEventEntryWait,
   eventBestArrival,
@@ -92,6 +94,12 @@ export default function AddEventInlineForm({
         </div>
       </div>
       <p className="text-[11px] text-white/50">Leave &quot;To&quot; empty for single-day events.</p>
+      <input
+        value={eventHours}
+        onChange={(event) => setEventHours(event.target.value)}
+        placeholder="Opening hours (for example Doors 20:00–03:00)"
+        className="w-full rounded-2xl border border-white/10 bg-black/30 p-3 outline-none"
+      />
       <PracticalIntelFields
         title="Practical event intelligence"
         description="Optional details for the actual event experience, not just the venue."

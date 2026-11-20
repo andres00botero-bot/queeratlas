@@ -55,6 +55,12 @@ export default function SelectedEventAdminControls({
               placeholder="To"
             />
           </div>
+          <input
+            value={draft.hours || ""}
+            onChange={(event) => setDraft((current) => ({ ...current, hours: event.target.value }))}
+            placeholder="Opening hours (for example Doors 20:00–03:00)"
+            className="w-full rounded-xl border border-white/14 bg-black/45 px-3 py-2 text-sm outline-none focus:border-amber-100/50"
+          />
           <VibeTagPicker
             value={draft.vibe_tags}
             onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
