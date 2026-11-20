@@ -113,6 +113,9 @@ export default function CityEventsRailSection({
                 <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/72">
                   {polishEventDescription(featuredEvent, cityName)}
                 </p>
+                <p className="mb-2 truncate text-xs text-violet-100/76">
+                  {featuredEvent.location || t("city.addressNotAvailable", "Address not available yet")}
+                </p>
                 <VibeTagChips entity={featuredEvent} tone="amber" className="mb-2" includeMixedFallback />
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs text-purple-200/90">{t("city.nextNotableEvent", "Next notable event in this city")}</p>
@@ -197,6 +200,9 @@ export default function CityEventsRailSection({
               </div>
               <p className="mb-2 line-clamp-2 text-sm leading-6 text-white/70">
                 {polishEventDescription(event, cityName)}
+              </p>
+              <p className="mb-2 truncate text-xs text-violet-100/76">
+                {event.location || t("city.addressNotAvailable", "Address not available yet")}
               </p>
               <VibeTagChips entity={event} tone="amber" className="mb-2" includeMixedFallback />
               <div className="flex items-center justify-between gap-2">

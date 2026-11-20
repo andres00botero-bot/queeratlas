@@ -3606,6 +3606,9 @@ export default function CityPageClient({ indexableContent = null }) {
           if (!missingTicketUrl) {
             legacyPayload.ticket_url = eventTicketUrl.trim() || null;
           }
+          if (!missingLocation) {
+            legacyPayload.location = eventAddress;
+          }
           if (!missingVibe) {
             legacyPayload.vibe = eventVibe.trim() || null;
           }
@@ -4743,6 +4746,9 @@ export default function CityPageClient({ indexableContent = null }) {
             if (!missingTicketUrl) {
               legacyPayload.ticket_url = ticketUrlValue || null;
             }
+            if (!missingLocation) {
+              legacyPayload.location = locationValue;
+            }
             if (!missingVibe) {
               legacyPayload.vibe = eventAdminDraft.vibe.trim() || null;
             }
@@ -4820,6 +4826,9 @@ export default function CityPageClient({ indexableContent = null }) {
             }
             if (!missingTicketUrl) {
               legacyInsertPayload.ticket_url = ticketUrlValue || null;
+            }
+            if (!missingLocation) {
+              legacyInsertPayload.location = locationValue;
             }
             if (!missingVibe) {
               legacyInsertPayload.vibe = eventAdminDraft.vibe.trim() || null;

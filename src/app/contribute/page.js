@@ -1106,6 +1106,9 @@ export default function ContributePage() {
           if (!missingTicketUrl) {
             legacyPayload.ticket_url = String(eventForm.ticket_url || "").trim() || null;
           }
+          if (!missingLocation) {
+            legacyPayload.location = eventForm.address;
+          }
           if (!missingVibe) {
             legacyPayload.vibe = eventForm.vibe.trim() || null;
           }
