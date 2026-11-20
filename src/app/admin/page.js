@@ -1106,6 +1106,11 @@ function AdminPageContent() {
                 const payload = submission?.payload && typeof submission.payload === "object" ? submission.payload : {};
                 const statusBusy = isProcessingSubmissionId === String(submission.id);
                 const submissionName = String(submission?.title || payload?.name || "Untitled");
+                const submitterName = String(submission?.submitted_by_name || "").trim();
+                const submitterEmail = String(submission?.submitted_by_email || "").trim();
+                const submitterLabel = submitterEmail
+                  ? (submitterName && submitterName.toLowerCase() !== "member" ? `${submitterName} (${submitterEmail})` : submitterEmail)
+                  : (submitterName || "Member");
 
                 return (
                   <article key={submission.id} className="group rounded-2xl border border-white/10 bg-black/25 p-4 transition hover:border-indigo-200/30 hover:bg-indigo-200/[.045]">
@@ -1117,7 +1122,7 @@ function AdminPageContent() {
                     </div>
                     <p className="mt-3 text-base font-semibold text-white">{submissionName}</p>
                     <p className="mt-2 text-xs text-white/65">
-                      by {String(submission.submitted_by_name || submission.submitted_by_email || "Member")}
+                      by {submitterLabel}
                       {submission.is_trusted_contributor ? " | trusted" : ""}
                     </p>
                     {payload?.description ? (
