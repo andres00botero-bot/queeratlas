@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { cityPath, citySelectionPath } from "@/lib/cityRouting";
+import { useLocale } from "@/components/i18n/LocaleProvider";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 import styles from "./CityGlobe.module.css";
 
 // Anchors use percentages of the cropped, illustrated globe.
@@ -18,15 +20,16 @@ const destinations = [
 ];
 
 export default function CityGlobe({ places, events, onCityChange }) {
+  const { locale, t } = useLocale();
   const [selection, setSelection] = useState(null);
   const venue = selection && places.find(place => place.city === selection.key && place.name && place.id);
   const event = selection && events.find(item => item.city === selection.key && item.name && item.id);
 
   return (
-    <section className={styles.globe} aria-label="Explore cities on the globe" lang="en">
+    <section className={styles.globe} aria-label={t("fieldGuide.globe")} lang={locale}>
       <div className={styles.map}>
         {destinations.map(city => (
-          <a key={city.key} href={"/en" + cityPath(city.key)} style={{ left: city.x + "%", top: city.y + "%" }}
+          <a key={city.key} href={toLocalePath(cityPath(city.key), locale)} style={{ left: city.x + "%", top: city.y + "%" }}
             aria-label={city.name} aria-current={selection?.key === city.key ? "location" : undefined} aria-controls="globe-city-notes"
             onClick={event => {
               if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -39,17 +42,17 @@ export default function CityGlobe({ places, events, onCityChange }) {
         ))}
       </div>
       <div id="globe-city-notes" aria-live="polite" className={styles.notes}>
-        <select aria-label="Explore a city" value={selection?.key || ""} onChange={e => {
+        <select aria-label={t("fieldGuide.choose")} value={selection?.key || ""} onChange={e => {
           const city = destinations.find(item => item.key === e.target.value);
           if (city) { setSelection(city); onCityChange(city.key); }
         }}>
-          <option value="" disabled>Explore a city</option>
+          <option value="" disabled>{t("fieldGuide.choose")}</option>
           {destinations.map(city => <option key={city.key} value={city.key}>{city.name}</option>)}
         </select>
         {selection && <>
-          <a href={"/en" + cityPath(selection.key)}>City guide →</a>
-          {event ? <a href={"/en" + citySelectionPath(selection.key, { eventId: event.id })}>{event.name}</a>
-            : venue && <a href={"/en" + citySelectionPath(selection.key, { placeId: venue.id })}>{venue.name}</a>}
+          <a href={toLocalePath(cityPath(selection.key), locale)}>{t("home.cityGuide", "City guide")} →</a>
+          {event ? <a href={toLocalePath(citySelectionPath(selection.key, { eventId: event.id }), locale)}>{event.name}</a>
+            : venue && <a href={toLocalePath(citySelectionPath(selection.key, { placeId: venue.id }), locale)}>{venue.name}</a>}
         </>}      </div>
     </section>
   );

@@ -335,10 +335,10 @@ export function MembershipPreview({ isMember = false, onAction, compact }) {
       <div>
         <h2 className="qa-h2">{t("home.memberTitle", "Save places. Plan your trip.")}</h2>
         <p>{t("home.memberShortDescription", "Keep your favourite places and organise your next trip—all in your own Atlas.")}</p>
-        <details><summary>Preview My Atlas</summary>{example}</details>
+        <details><summary>{t("home.memberPreviewLabel", "Preview My Atlas")}</summary>{example}</details>
       </div>
-      <div><button onClick={onAction}>{isMember ? "Open your Atlas" : "Create your free Atlas"}</button>
-        <p className={styles.meta}>Free to join. Private by default.</p></div>
+      <div><button onClick={onAction}>{isMember ? t("home.openYourAtlas", "Open your Atlas") : t("home.createFreeAtlas", "Create your free Atlas")}</button>
+        <p className={styles.meta}>{t("home.memberReassurance", "Free to join. Private by default.")}</p></div>
     </section>
   );  return (
     <section data-home-section="membership-preview" className="qa-defer-render mt-5 py-2 sm:mt-6 sm:py-4">
@@ -475,7 +475,7 @@ export default function HomeDeferredSections({
         {fieldGuide}
         {membership}
         <details className="mt-6 border-y border-white/15 py-4">
-          <summary className="qa-h3 cursor-pointer py-2">Community, contributions &amp; queer dictionary</summary>
+          <summary className="qa-h3 cursor-pointer py-2">{t("fieldGuide.community")}</summary>
           <ParticipationStrip actions={participationActions} />
           <CompassPreview onOpen={onEditorialAction} />
         </details>

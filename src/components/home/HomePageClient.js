@@ -144,10 +144,8 @@ function scheduleIdleTask(task, timeout = 650) {
   return () => window.clearTimeout(timeoutId);
 }
 
-export default function HomePageClient({ initialHomeData = null, englishNavigation = null, englishFeature = null }) {
+export default function HomePageClient({ initialHomeData = null, shortcuts = null, fieldGuide = null }) {
   const { locale, t } = useLocale();
-  const shortcuts = locale === "en" ? englishNavigation : null;
-  const fieldGuide = locale === "en" ? englishFeature : null;
   const router = useRouter();
   const initialEvents = useMemo(
     () => (Array.isArray(initialHomeData?.events) ? initialHomeData.events : []),
@@ -1224,7 +1222,7 @@ export default function HomePageClient({ initialHomeData = null, englishNavigati
               {!fieldGuide && <p className={`qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px] ${isMember ? "max-lg:mt-4!" : ""}`}>
                 {t("home.whereverYouAre", "Wherever you are")}
               </p>}
-              {locale === "es" ? (
+              {!fieldGuide && locale === "es" ? (
                 <p className="mt-3 max-w-[48ch] !text-left text-sm font-medium leading-6 text-cyan-50/88 sm:text-base">
                   Queer Atlas en español: ciudades LGBTQ+, lugares seguros, eventos y vida nocturna queer.
                 </p>
@@ -1232,7 +1230,7 @@ export default function HomePageClient({ initialHomeData = null, englishNavigati
               <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
                 {t("home.findYourQueerWorld", "Find your queer world.")}
               </h1>
-              {fieldGuide ? <p className="qa-lead mt-4 max-w-[44ch] !text-left text-white/80">Find queer places, events and local travel advice by city.</p> : <>
+              {fieldGuide ? <p className="qa-lead mt-4 max-w-[44ch] !text-left text-white/80">{t("fieldGuide.hero", "Find queer places, events and local travel advice by city.")}</p> : <>
               <p className="mt-4 !text-left text-sm font-medium leading-6 text-[#d8b678] sm:mt-5 sm:text-base">
                 {t("home.livingAtlas", "A living atlas, built together.")}
               </p>

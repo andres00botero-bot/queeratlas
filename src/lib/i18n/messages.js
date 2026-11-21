@@ -1291,6 +1291,96 @@ messages.de.community = {
   improveAtlas: "Queer Atlas verbessern", improveIntro: "Schlage vor, was wir als Nächstes gemeinsam bauen sollten.", safetyReport: "Sicherheitsmeldung", reportContent: "Inhalt melden", reason: "Grund",
 };
 
+messages.en.fieldGuide = {
+  "hero": "Find queer places, events and local travel advice by city.",
+  "collections": "Atlas Collections",
+  "intro": "Queer travel guides, selected by the editors.",
+  "all": "View all",
+  "cafes": "Hidden queer cafés",
+  "bars": "Lesbian bars in Europe",
+  "beaches": "Queer beaches in Europe",
+  "drag": "Drag venues",
+  "shortcuts": "Atlas shortcuts",
+  "cities": "City guides",
+  "calendar": "Event calendar",
+  "risk": "Travel risk map",
+  "globe": "Explore cities on the globe",
+  "choose": "Explore a city",
+  "community": "Community, contributions & queer dictionary"
+};
+
+messages.es.fieldGuide = {
+  "hero": "Descubre lugares queer, eventos y consejos locales para cada ciudad.",
+  "collections": "Colecciones del Atlas",
+  "intro": "Guías de viaje queer seleccionadas por la redacción.",
+  "all": "Ver todas",
+  "cafes": "Cafés queer por descubrir",
+  "bars": "Bares lésbicos en Europa",
+  "beaches": "Playas queer en Europa",
+  "drag": "Escenarios drag",
+  "shortcuts": "Accesos directos al Atlas",
+  "cities": "Guías de ciudades",
+  "calendar": "Calendario de eventos",
+  "risk": "Mapa de riesgos de viaje",
+  "globe": "Explora ciudades en el globo",
+  "choose": "Explora una ciudad",
+  "community": "Comunidad, contribuciones y diccionario queer"
+};
+
+messages.fr.fieldGuide = {
+  "hero": "Découvrez les lieux queer, les événements et les conseils de voyage pour chaque ville.",
+  "collections": "Collections de l’Atlas",
+  "intro": "Des guides de voyage queer sélectionnés par la rédaction.",
+  "all": "Tout voir",
+  "cafes": "Cafés queer à découvrir",
+  "bars": "Bars lesbiens en Europe",
+  "beaches": "Plages queer en Europe",
+  "drag": "Scènes drag",
+  "shortcuts": "Raccourcis de l’Atlas",
+  "cities": "Guides des villes",
+  "calendar": "Calendrier des événements",
+  "risk": "Carte des risques de voyage",
+  "globe": "Explorer les villes sur le globe",
+  "choose": "Explorer une ville",
+  "community": "Communauté, contributions et dictionnaire queer"
+};
+
+messages.de.fieldGuide = {
+  "hero": "Entdecke queere Orte, Events und lokale Reisetipps für jede Stadt.",
+  "collections": "Atlas-Kollektionen",
+  "intro": "Queere Reiseführer, ausgewählt von der Redaktion.",
+  "all": "Alle ansehen",
+  "cafes": "Queere Café-Geheimtipps",
+  "bars": "Lesbische Bars in Europa",
+  "beaches": "Queere Strände in Europa",
+  "drag": "Drag-Bühnen",
+  "shortcuts": "Atlas-Schnellzugriff",
+  "cities": "Stadtguides",
+  "calendar": "Eventkalender",
+  "risk": "Reiserisikokarte",
+  "globe": "Städte auf dem Globus entdecken",
+  "choose": "Stadt entdecken",
+  "community": "Community, Beiträge und queeres Wörterbuch"
+};
+
+messages.pt.fieldGuide = {
+  "hero": "Descubra lugares queer, eventos e dicas de viagem locais em cada cidade.",
+  "collections": "Coleções do Atlas",
+  "intro": "Guias de viagem queer selecionados pela redação.",
+  "all": "Ver todas",
+  "cafes": "Cafés queer para descobrir",
+  "bars": "Bares lésbicos na Europa",
+  "beaches": "Praias queer na Europa",
+  "drag": "Palcos de drag",
+  "shortcuts": "Atalhos do Atlas",
+  "cities": "Guias de cidades",
+  "calendar": "Calendário de eventos",
+  "risk": "Mapa de riscos de viagem",
+  "globe": "Explorar cidades no globo",
+  "choose": "Explorar uma cidade",
+  "community": "Comunidade, contribuições e dicionário queer"
+};
+
 export function getMessage(locale, key, fallback = key) {
   const language = normalizeLocale(locale);
   const nowExtraKey = String(key || "").startsWith("now.") ? String(key).slice(4) : "";
