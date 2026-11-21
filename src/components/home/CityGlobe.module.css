@@ -1,0 +1,22 @@
+.globe { min-width: 0; align-self: center; color: #fff8fc; }
+.map { position: relative; width: 100%; aspect-ratio: 1.4; isolation: isolate; }
+.map::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: url("/home/queer-atlas-city-globe.webp") center / 100% 100% no-repeat;
+  mask-image: linear-gradient(to right, transparent, black 17%, black 83%, transparent),
+    linear-gradient(to bottom, transparent, black 13%, black 83%, transparent);
+  mask-composite: intersect;
+}
+.map a { position: absolute; display: grid; place-items: center; width: 26px; height: 26px; transform: translate(-50%,-50%); border-radius: 50%; color: white; }
+.dot { width: 8px; height: 8px; border: 1px solid #fff; background: #a2e2de; border-radius: 50%; box-shadow: 0 0 0 3px #0b1020bb, 0 0 12px #8de4df; }
+.caption { opacity: 0; pointer-events: none; position: absolute; bottom: 100%; white-space: nowrap; padding: 3px 9px; border-radius: 4px; background: #0b1020ed; font: 600 14px var(--qa-font-ui); }
+.map a:is(:hover,:focus-visible,[aria-current]) { z-index: 1; }
+.map a[aria-current] .dot { background: #f5a9c6; }
+.map a:is(:hover,:focus-visible) .caption { opacity: 1; }
+.globe :focus-visible { outline: 2px solid #a2e2de; outline-offset: 2px; }
+.notes { min-height: 52px; display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; justify-content: center; }
+.notes select, .notes a { min-height: 44px; font: 500 15px var(--qa-font-ui); }
+.notes select { background: transparent; color: #fff8fc; padding-inline: 4px; }
+.notes option { background: #101426; }
+.notes a { display: inline-flex; align-items: center; color: #a2e2de; text-underline-offset: 4px; }
+.notes a:hover { text-decoration: underline; }

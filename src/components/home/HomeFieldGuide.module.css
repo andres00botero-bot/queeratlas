@@ -1,0 +1,27 @@
+.lower { position: relative; width: 100%; max-width: 72rem; margin: 0 auto; }
+.edition { padding: clamp(20px,3vw,48px) 0 12px; }
+.update { display:grid; grid-template-columns:minmax(7rem,1fr) minmax(0,3fr) minmax(7rem,1fr) auto; gap:20px; align-items:center; width:100%; min-height:72px; border-top:1px solid #364052; padding:14px 0; text-align:left; }
+.updates { border-bottom:1px solid #364052; }
+.kind { color:#a2e2de; font-size:.82rem; }
+.story { font:600 clamp(1rem,1.3vw,1.25rem)/1.35 var(--qa-font-display); overflow-wrap:anywhere; }
+.meta, .member p { color:#bcc7d2; font-size:.88rem; }
+.update:hover .story { text-decoration:underline; text-underline-offset:4px; }
+.lower :focus-visible { outline:2px solid #a2e2de; outline-offset:3px; }
+.member { display:flex; justify-content:space-between; align-items:start; gap:24px; border-top:1px solid #364052; padding:32px 0 12px; }
+.member p { margin:8px 0; max-width:56ch; }
+.member button { min-height:44px; border-radius:24px; padding:8px 20px; background:#a2e2de; color:#101426; font-weight:600; }
+.member summary { cursor:pointer; color:#a2e2de; padding:10px 0; }
+.lower [data-home-section="venue_intelligence"] { background:transparent; padding-inline:0; }
+.lower [data-home-section="venue_intelligence"] article { background:transparent; border:0; border-radius:0; padding:0 16px 12px 0; }
+.lower [data-home-section="editorial_trust"] article nav { display:flex; flex-direction:column; gap:0; }
+.lower [data-home-section="editorial_trust"] article nav a { min-height:44px; border:0; border-bottom:1px solid #364052; border-radius:0; background:none; box-shadow:none; padding:4px 0; transform:none; }
+.lower [data-home-section="editorial_trust"] article nav a span:first-child { border:0; background:none; }
+.lower [data-home-section="donate"] { border-top:1px solid #364052; }
+.lower [data-home-section="donate"] > div { padding:22px 0; }
+.lower section:last-child > div:first-child { background:none; box-shadow:none; }
+@media(max-width:720px){
+  .update { grid-template-columns:minmax(0,1fr) auto; gap:3px 12px; }
+  .update .kind,.update .story,.update .meta { grid-column:1; }
+  .update svg { grid-column:2; grid-row:1 / 4; }
+  .member { flex-direction:column; gap:8px; }
+}

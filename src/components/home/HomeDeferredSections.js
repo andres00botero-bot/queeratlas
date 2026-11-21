@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import styles from "./HomeFieldGuide.module.css";
 import { useLocale } from "@/components/i18n/LocaleProvider";
 import {
   Activity,
@@ -96,11 +97,19 @@ const PULSE_TONES = {
   },
 };
 
-function PulseCard({ item }) {
+function PulseCard({ item, compact }) {
   const Icon = PULSE_ICONS[item.key] || Activity;
   const tone = PULSE_TONES[item.key] || PULSE_TONES["local-pick"];
   const detail = item.key === "next-event" ? item.signalValue : item.meta;
 
+  if (compact) return (
+    <button type="button" onClick={item.onClick} className={styles.update}>
+      <span className={styles.kind}>{item.subtitle}</span>
+      <span className={styles.story}>{item.title}</span>
+      <span className={styles.meta}>{detail}</span>
+      <ArrowUpRight size={17} aria-hidden="true" />
+    </button>
+  );
   return (
     <button
       type="button"
@@ -297,10 +306,41 @@ export function HomeDiscoverySection({ discoveryCards = [] }) {
   );
 }
 
-export function MembershipPreview({ isMember = false, onAction }) {
+export function MembershipPreview({ isMember = false, onAction, compact }) {
   const { t } = useLocale();
 
-  return (
+  const example = (
+<div className="relative min-h-[330px] overflow-hidden px-5 pb-7 pt-4 sm:px-7 sm:pb-7 lg:block lg:py-5">
+            <div className="absolute left-[14%] top-[19%] h-[58%] w-px bg-gradient-to-b from-transparent via-cyan-100/70 to-transparent" />
+            <div className="absolute left-[14%] top-[31%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-cyan-200 shadow-[0_0_0_5px_rgba(125,211,252,0.12),0_0_25px_rgba(125,211,252,0.8)]" />
+            <div className="absolute left-[14%] top-[65%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-fuchsia-300 shadow-[0_0_0_5px_rgba(232,121,249,0.1),0_0_24px_rgba(232,121,249,0.62)]" />
+            <div className="relative ml-[12%] max-w-md">
+              <div className="flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-50/58">
+                <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
+                <span>{t("home.memberPreviewStatus", "Private")}</span>
+              </div>
+
+              <div className="mt-3 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm">
+                <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><div><p className="text-sm font-semibold text-white">My Atlas</p><p className="mt-0.5 text-[11px] text-white/48">Private by default</p></div></div><span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">Growing</span></div>
+                <div className="mt-2 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">14</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Saved</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">3</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Visited</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">4</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Cities</p></div></div>
+                <div className="mt-4 border-t border-white/10 pt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/66">Your cities</p><div className="mt-2 flex flex-wrap gap-2"><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Berlin · 6</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Stockholm · 5</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Brussels · 3</span></div></div>
+              </div>
+
+              <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f5d99a]/70">Coming up</p><p className="mt-1 text-sm font-medium text-white">Berlin · 4 places ready to shape</p></div><span className="h-2.5 w-2.5 rounded-full bg-[#f5d99a] shadow-[0_0_18px_rgba(245,217,154,0.7)]" /></div>
+            </div>
+          </div>
+  );
+  if (compact) return (
+    <section data-home-section="membership-preview" className={styles.member}>
+      <div>
+        <h2 className="qa-h2">{t("home.memberTitle", "Save places. Plan your trip.")}</h2>
+        <p>{t("home.memberShortDescription", "Keep your favourite places and organise your next trip—all in your own Atlas.")}</p>
+        <details><summary>Preview My Atlas</summary>{example}</details>
+      </div>
+      <div><button onClick={onAction}>{isMember ? "Open your Atlas" : "Create your free Atlas"}</button>
+        <p className={styles.meta}>Free to join. Private by default.</p></div>
+    </section>
+  );  return (
     <section data-home-section="membership-preview" className="qa-defer-render mt-5 py-2 sm:mt-6 sm:py-4">
       <div className="relative isolate overflow-hidden rounded-[24px] bg-[#e6d7be] text-[#171421] shadow-[0_18px_46px_rgba(0,0,0,0.24)] sm:rounded-[30px] sm:shadow-[0_30px_84px_rgba(0,0,0,0.34)]">
         <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] bg-[radial-gradient(circle_at_80%_15%,rgba(48,208,204,0.9),transparent_18%),radial-gradient(circle_at_18%_88%,rgba(229,113,174,0.72),transparent_28%),linear-gradient(135deg,#131b35_4%,#19294a_58%,#101826)] lg:block" />
@@ -326,25 +366,7 @@ export function MembershipPreview({ isMember = false, onAction }) {
             </div>
           </div>
 
-          <div className="relative hidden min-h-[330px] overflow-hidden px-5 pb-7 pt-4 sm:px-7 sm:pb-7 lg:block lg:py-5">
-            <div className="absolute left-[14%] top-[19%] h-[58%] w-px bg-gradient-to-b from-transparent via-cyan-100/70 to-transparent" />
-            <div className="absolute left-[14%] top-[31%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-cyan-200 shadow-[0_0_0_5px_rgba(125,211,252,0.12),0_0_25px_rgba(125,211,252,0.8)]" />
-            <div className="absolute left-[14%] top-[65%] h-2.5 w-2.5 -translate-x-[45%] rounded-full bg-fuchsia-300 shadow-[0_0_0_5px_rgba(232,121,249,0.1),0_0_24px_rgba(232,121,249,0.62)]" />
-            <div className="relative ml-[12%] max-w-md">
-              <div className="flex items-center justify-between px-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-50/58">
-                <span>{t("home.memberPreviewLabel", "Preview · My Atlas")}</span>
-                <span>{t("home.memberPreviewStatus", "Private")}</span>
-              </div>
-
-              <div className="mt-3 rounded-[22px] border border-white/[0.18] bg-[#0e162a]/70 p-4 shadow-[0_18px_38px_rgba(0,0,0,0.22)] backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-4"><div className="flex items-center gap-3"><span className="flex h-10 w-10 items-center justify-center rounded-[14px] border border-cyan-100/18 bg-cyan-100/10 text-xs font-bold text-cyan-50">QA</span><div><p className="text-sm font-semibold text-white">My Atlas</p><p className="mt-0.5 text-[11px] text-white/48">Private by default</p></div></div><span className="rounded-full border border-cyan-100/20 bg-cyan-100/10 px-2.5 py-1 text-[10px] font-semibold text-cyan-50">Growing</span></div>
-                <div className="mt-2 grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">14</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Saved</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">3</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Visited</p></div><div className="rounded-xl bg-white/[0.06] px-3 py-2.5"><p className="text-base font-semibold text-white">4</p><p className="text-[11px] uppercase tracking-[0.03em] text-white/58">Cities</p></div></div>
-                <div className="mt-4 border-t border-white/10 pt-3"><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-cyan-100/66">Your cities</p><div className="mt-2 flex flex-wrap gap-2"><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Berlin · 6</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Stockholm · 5</span><span className="rounded-full border border-white/12 bg-white/[0.055] px-2.5 py-1 text-[11px] text-white/76">Brussels · 3</span></div></div>
-              </div>
-
-              <div className="ml-[7%] mt-3 flex items-center justify-between gap-3 rounded-2xl border border-[#f5d99a]/25 bg-[#1d1b2b]/90 px-4 py-3 shadow-[0_16px_30px_rgba(0,0,0,0.2)]"><div><p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f5d99a]/70">Coming up</p><p className="mt-1 text-sm font-medium text-white">Berlin · 4 places ready to shape</p></div><span className="h-2.5 w-2.5 rounded-full bg-[#f5d99a] shadow-[0_0_18px_rgba(245,217,154,0.7)]" /></div>
-            </div>
-          </div>
+          <div className="hidden lg:block">{example}</div>
         </div>
       </div>
     </section>
@@ -394,22 +416,23 @@ export default function HomeDeferredSections({
   onEditorialAction,
   contactSlot = null,
   evidenceSlot = null,
+  fieldGuide = null, membership = null, donation = null,
   showDiscovery = true,
   isMember = false,
   onMembershipAction,
 }) {
   const { t } = useLocale();
   return (
-    <>
+    <div className={fieldGuide ? styles.lower : "contents"}>
       {showDiscovery ? <HomeDiscoverySection discoveryCards={discoveryCards} /> : null}
 
-      <ParticipationStrip actions={participationActions} />
+      {!fieldGuide && <ParticipationStrip actions={participationActions} />}
 
-      <CompassPreview onOpen={onEditorialAction} />
+      {!fieldGuide && <CompassPreview onOpen={onEditorialAction} />}
 
       {livePulseCards.length > 0 ? (
         <section id="atlas-pulse" data-home-section="live" className="qa-defer-render mt-8 scroll-mt-5">
-          <div className="rounded-[24px] bg-[#0B1220] p-3 sm:p-6">
+          <div className={fieldGuide ? styles.edition : "rounded-[24px] bg-[#0B1220] p-3 sm:p-6"}>
             <div className="mb-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="flex items-center gap-2 !text-left text-xs font-semibold uppercase tracking-[0.16em] text-[#80D4C4]">
@@ -439,19 +462,29 @@ export default function HomeDeferredSections({
               </h2>
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-3">
+            <div className={fieldGuide ? styles.updates : "grid gap-3 lg:grid-cols-3"}>
               {livePulseCards.map((item) => (
-                <PulseCard key={item.key} item={item} />
+                <PulseCard key={item.key} item={item} compact={!!fieldGuide} />
               ))}
             </div>
           </div>
         </section>
       ) : null}
 
+      {fieldGuide && <>
+        {fieldGuide}
+        {membership}
+        <details className="mt-6 border-y border-white/15 py-4">
+          <summary className="qa-h3 cursor-pointer py-2">Community, contributions &amp; queer dictionary</summary>
+          <ParticipationStrip actions={participationActions} />
+          <CompassPreview onOpen={onEditorialAction} />
+        </details>
+      </>}
       {evidenceSlot}
 
       <TrustSupportStrip onAction={onEditorialAction} contactSlot={contactSlot} />
 
+      {fieldGuide && donation}
       <section className="qa-defer-render mt-7 pb-24 sm:mt-10 sm:pb-4">
         <div className="hidden rounded-2xl border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-3.5 opacity-75 sm:block">
           <div className="mx-auto flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/45">
@@ -478,6 +511,6 @@ export default function HomeDeferredSections({
           <Link href="/terms" className="underline underline-offset-2 transition hover:text-white">{t("home.terms", "Terms")}</Link>
         </div>
       </section>
-    </>
+    </div>
   );
 }

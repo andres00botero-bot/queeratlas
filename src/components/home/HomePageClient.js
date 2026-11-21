@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import CityGlobe from "./CityGlobe";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -143,8 +144,10 @@ function scheduleIdleTask(task, timeout = 650) {
   return () => window.clearTimeout(timeoutId);
 }
 
-export default function HomePageClient({ initialHomeData = null }) {
+export default function HomePageClient({ initialHomeData = null, englishNavigation = null, englishFeature = null }) {
   const { locale, t } = useLocale();
+  const shortcuts = locale === "en" ? englishNavigation : null;
+  const fieldGuide = locale === "en" ? englishFeature : null;
   const router = useRouter();
   const initialEvents = useMemo(
     () => (Array.isArray(initialHomeData?.events) ? initialHomeData.events : []),
@@ -207,7 +210,7 @@ export default function HomePageClient({ initialHomeData = null }) {
   const [authMessage, setAuthMessage] = useState("");
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [showDeferredSections, setShowDeferredSections] = useState(false);
+  const [showDeferredSections, setShowDeferredSections] = useState(Boolean(fieldGuide));
   const [nowTick, setNowTick] = useState(0);
   const [homeFocusCity, setHomeFocusCity] = useState("");
   const [homeFocusSource, setHomeFocusSource] = useState("");
@@ -1031,6 +1034,26 @@ export default function HomePageClient({ initialHomeData = null }) {
     ? `${memberName || "Alias"} | ${memberProfile?.pronouns || "Pronomen"}`
     : "";
 
+  const membership = (
+<MembershipPreview compact={!!fieldGuide}
+            isMember={isMember}
+            onAction={() => {
+              trackHomeAction("membership_preview", isMember ? "/favorites" : "signup", { member_status: isMember ? "member" : "visitor" });
+              if (isMember) {
+                router.push("/favorites");
+                return;
+              }
+              openSignup("/favorites", "signup", "membership_preview");
+            }}
+          />
+  );
+  const donation = (
+<DonationCallout
+            onDonate={() => {
+              trackHomeAction("donate", "paypal", { currency: "EUR", provider: "paypal" });
+            }}
+          />
+  );
   return (
     <main className="qa-page min-h-screen overflow-x-hidden bg-[#0b1020] text-[#fff8fc]">
       <div className="relative">
@@ -1040,7 +1063,7 @@ export default function HomePageClient({ initialHomeData = null }) {
 
         <div className="qa-shell qa-shell-home relative flex min-h-screen w-full flex-col pt-0">
           <section data-home-section="hero" className="relative left-1/2 z-[60] w-screen -translate-x-1/2 overflow-visible rounded-none bg-[#0b1020] px-4 pb-4 pt-4 shadow-[0_22px_72px_rgba(0,0,0,0.32)] backdrop-blur-[1.5px] sm:px-6 sm:pb-4 sm:pt-6 lg:z-[100] lg:min-h-[734px] xl:min-h-[754px] xl:px-8 xl:pb-4 xl:pt-8">
-            <div className="pointer-events-none absolute inset-0 hidden lg:block">
+            {!fieldGuide && <div className="pointer-events-none absolute inset-0 hidden lg:block">
               <picture>
                 <source
                   media="(min-width: 1024px)"
@@ -1058,7 +1081,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                   className="absolute inset-x-0 top-[0.5cm] h-full w-full object-cover object-[center_50%] opacity-[0.94] [filter:brightness(0.88)_contrast(1.06)_saturate(0.92)] lg:origin-right lg:scale-[0.885] lg:object-contain lg:object-right"
                 />
               </picture>
-            </div>
+            </div>}
             <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(100deg,rgba(11,16,32,0.98)_0%,rgba(11,16,32,0.76)_30%,rgba(11,16,32,0.24)_55%,rgba(11,16,32,0.06)_76%,rgba(11,16,32,0.14)_100%)] lg:block" />
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_92%_8%,rgba(34,211,238,0.11),transparent_34%),radial-gradient(circle_at_4%_45%,rgba(244,114,182,0.075),transparent_32%),linear-gradient(180deg,#03101a_0%,#020914_46%,#01010C_100%)] lg:hidden" />
             <div className="pointer-events-none absolute inset-x-0 top-0 hidden h-24 bg-gradient-to-b from-[#0b1020]/46 via-[#0b1020]/12 to-transparent lg:block" />
@@ -1179,7 +1202,7 @@ export default function HomePageClient({ initialHomeData = null }) {
             </div>
           </div>
 
-          <div className="lg:flex lg:flex-1 lg:items-center">
+          <div className={fieldGuide ? "grid flex-1 items-center gap-4 lg:grid-cols-[0.9fr_1.1fr]" : "lg:flex lg:flex-1 lg:items-center"}>
             <section className="w-full pb-1 lg:pb-10 lg:pt-8 xl:pt-12">
               <div className="hidden items-center gap-2.5 sm:gap-3 lg:hidden">
                 <Image
@@ -1198,9 +1221,9 @@ export default function HomePageClient({ initialHomeData = null }) {
                 </div>
               </div>
 
-              <p className={`qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px] ${isMember ? "max-lg:mt-4!" : ""}`}>
+              {!fieldGuide && <p className={`qa-eyebrow mt-5 !text-left text-[10px] font-semibold uppercase tracking-[0.24em] text-cyan-100/72 sm:mt-10 sm:text-[11px] ${isMember ? "max-lg:mt-4!" : ""}`}>
                 {t("home.whereverYouAre", "Wherever you are")}
-              </p>
+              </p>}
               {locale === "es" ? (
                 <p className="mt-3 max-w-[48ch] !text-left text-sm font-medium leading-6 text-cyan-50/88 sm:text-base">
                   Queer Atlas en español: ciudades LGBTQ+, lugares seguros, eventos y vida nocturna queer.
@@ -1209,6 +1232,7 @@ export default function HomePageClient({ initialHomeData = null }) {
               <h1 className="qa-display qa-h1 mt-3 max-w-[12ch] !text-left text-[2.85rem] font-bold leading-[0.94] tracking-[-0.052em] text-white [hyphens:none] sm:text-[4.9rem] lg:text-[5.5rem] xl:text-[6.35rem]">
                 {t("home.findYourQueerWorld", "Find your queer world.")}
               </h1>
+              {fieldGuide ? <p className="qa-lead mt-4 max-w-[44ch] !text-left text-white/80">Find queer places, events and local travel advice by city.</p> : <>
               <p className="mt-4 !text-left text-sm font-medium leading-6 text-[#d8b678] sm:mt-5 sm:text-base">
                 {t("home.livingAtlas", "A living atlas, built together.")}
               </p>
@@ -1216,6 +1240,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                 <span className="sm:hidden">{t("home.heroShort", "Places, events, safety and local queer knowledge — wherever you land.")}</span>
                 <span className="hidden sm:inline">{t("home.heroLong", "Know where to go, what’s happening, how it feels, and what locals actually say — wherever you land.")}</span>
               </p>
+              </>}
               {isDataLoading && (
                 <p role="status" aria-live="polite" className="mt-3 text-xs text-white/55">{t("home.loadingLiveData", "Loading live atlas data...")}</p>
               )}
@@ -1336,7 +1361,7 @@ export default function HomePageClient({ initialHomeData = null }) {
                     </div>
                   )}
 
-                <div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
+                {<div className="mt-3 flex items-center divide-x divide-white/10 border-t border-white/10 px-1 pt-3">
                   <div className="min-w-0 flex-1 px-2 text-center sm:px-3">
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{countryCountDisplay}</p>
                     <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.countries", "Countries")}</p>
@@ -1353,12 +1378,12 @@ export default function HomePageClient({ initialHomeData = null }) {
                     <p className="tabular-nums !text-center text-sm font-semibold leading-none text-white/92 sm:text-base">{eventCountDisplay}</p>
                     <p className="mt-1 !text-center text-[11px] uppercase tracking-[0.03em] whitespace-nowrap text-white/58">{t("home.events", "Events")}</p>
                   </div>
-                </div>
+                </div>}
                 </div>
 
               </div>
 
-              <div className="mt-3 flex justify-center sm:justify-start">
+              {shortcuts || <div className="mt-3 flex justify-center sm:justify-start">
                 <a
                   href="#support-queeratlas"
                   onClick={() => trackHomeAction("donate_anchor", "support-queeratlas", { placement: "hero" })}
@@ -1368,37 +1393,24 @@ export default function HomePageClient({ initialHomeData = null }) {
                   {t("home.supportIndependent", "Help keep QueerAtlas independent")}
                   <span aria-hidden="true">→</span>
                 </a>
-              </div>
+              </div>}
 
             </section>
+            {fieldGuide && <CityGlobe places={places} events={upcomingEvents} onCityChange={handleHomeFocusCityChange} />}
           </div>
             </div>
           </section>
 
           <HomeDiscoverySection discoveryCards={discoveryCards} />
 
-          <MembershipPreview
-            isMember={isMember}
-            onAction={() => {
-              trackHomeAction("membership_preview", isMember ? "/favorites" : "signup", { member_status: isMember ? "member" : "visitor" });
-              if (isMember) {
-                router.push("/favorites");
-                return;
-              }
-              openSignup("/favorites", "signup", "membership_preview");
-            }}
-          />
-
-          <DonationCallout
-            onDonate={() => {
-              trackHomeAction("donate", "paypal", { currency: "EUR", provider: "paypal" });
-            }}
-          />
-
+          {!fieldGuide && <>{membership}{donation}</>}
           {showDeferredSections ? (
             <HomeDeferredSections
               discoveryCards={discoveryCards}
               showDiscovery={false}
+              fieldGuide={fieldGuide}
+              membership={membership}
+              donation={donation}
               livePulseCards={livePulseCards}
               localContext={{
                 city: focusedCity,
