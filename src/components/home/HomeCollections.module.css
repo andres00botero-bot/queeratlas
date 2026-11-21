@@ -1,4 +1,7 @@
 .nav { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 16px 0; }
+@media (width < 768px) {
+  .nav { justify-content: center; }
+}
 .nav a, .feature a { display: inline-flex; align-items: center; min-height: 44px; color: #a9e5df; text-decoration: underline; text-underline-offset: 5px; }
 .feature {
   margin-block: clamp(18px, 2vw, 30px);
