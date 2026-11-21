@@ -2,7 +2,6 @@
 .map { position: relative; width: 100%; aspect-ratio: 1.4; isolation: isolate; }
 .map::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  background: url("/home/queer-atlas-city-globe.webp") center / 100% 100% no-repeat;
   mask-image: linear-gradient(to right, transparent, black 17%, black 83%, transparent),
     linear-gradient(to bottom, transparent, black 13%, black 83%, transparent);
   mask-composite: intersect;
@@ -20,3 +19,10 @@
 .notes option { background: #101426; }
 .notes a { display: inline-flex; align-items: center; color: #a2e2de; text-underline-offset: 4px; }
 .notes a:hover { text-decoration: underline; }
+@media (width < 768px) {
+  .map { display: none; }
+  .notes { justify-content: flex-start; min-height: 44px; }
+}
+@media (min-width: 768px) {
+  .map::before { background: url("/home/queer-atlas-city-globe.webp") center / 100% 100% no-repeat; }
+}
