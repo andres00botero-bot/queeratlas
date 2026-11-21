@@ -20,8 +20,7 @@
 .notes a { display: inline-flex; align-items: center; color: #a2e2de; text-underline-offset: 4px; }
 .notes a:hover { text-decoration: underline; }
 @media (width < 768px) {
-  .map { display: none; }
-  .notes { justify-content: flex-start; min-height: 44px; }
+  .globe { display: none; }
 }
 @media (min-width: 768px) {
   .map::before { background: url("/home/queer-atlas-city-globe.webp") center / 100% 100% no-repeat; }
