@@ -97,6 +97,20 @@ body > div:first-child {
   --qa-section-space: var(--qa-space-6);
 }
 
+/* Keep global navigation below the private-message composer at every width. */
+.qa-messages-navigation {
+  display: grid;
+  justify-items: center;
+  gap: var(--qa-space-2);
+  padding: var(--qa-space-2);
+}
+
+.qa-messages-navigation > .fixed {
+  position: static;
+  translate: none;
+  max-width: 100%;
+}
+
 .qa-shell {
   width: min(100%, 80rem);
   margin-inline: auto;

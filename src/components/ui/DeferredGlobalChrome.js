@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { toLocalePath } from "@/lib/i18n/localeRouting";
 
 const FloatingHomeButton = dynamic(() => import("@/components/ui/FloatingHomeButton"), {
   ssr: false,
@@ -23,6 +25,8 @@ const ProfileSetupReminder = dynamic(() => import("@/components/community/Profil
 });
 
 export default function DeferredGlobalChrome() {
+  const pathname = usePathname();
+  const isMessagesPage = toLocalePath(pathname, "en") === "/en/messages";
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -37,8 +41,17 @@ export default function DeferredGlobalChrome() {
 
   return (
     <>
-      <FloatingHomeButton />
-      <ScrollToTopButton />
+      {isMessagesPage ? (
+        <footer className="qa-messages-navigation">
+          <FloatingHomeButton />
+          <ScrollToTopButton />
+        </footer>
+      ) : (
+        <>
+          <FloatingHomeButton />
+          <ScrollToTopButton />
+        </>
+      )}
       {isReady ? (
         <>
           <MessageAlertGate />
