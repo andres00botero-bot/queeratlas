@@ -772,11 +772,12 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
     });
   };
 
-  const submitHomeSearch = (source) => {
-    const normalizedQuery = query.trim();
+  const submitHomeSearch = (event) => {
+    event.preventDefault();
+    const normalizedQuery = String(new FormData(event.currentTarget).get("q") ?? "").trim();
     trackKpiEvent("home_search_submitted", {
       meta: {
-        source,
+        source: event.nativeEvent.submitter ? "button" : "keyboard",
         query_length: normalizedQuery.length,
         result_count: results.length,
       },
@@ -1257,7 +1258,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
 
               <div className="relative z-20 mt-5 w-full max-w-[44rem] sm:mt-7">
               <div className="relative w-full sm:rounded-[28px] sm:border sm:border-cyan-100/18 sm:bg-[linear-gradient(180deg,rgba(13,20,31,0.76),rgba(7,12,22,0.68))] sm:p-4 sm:shadow-[0_18px_48px_rgba(0,3,12,0.32),inset_0_1px_0_rgba(255,255,255,0.09)] sm:backdrop-blur-lg">
-                <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                <form action={toLocalePath("/search", locale)} method="get" onSubmit={submitHomeSearch} className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
                   <div className="relative min-w-0 flex-1">
                     <Search
                       className="absolute left-4 top-1/2 -translate-y-1/2 max-sm:z-10 max-sm:pointer-events-none text-white/75 sm:text-white/38"
@@ -1269,7 +1270,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                       type="search"
                       aria-label={t("home.searchLabel", "Search cities, venues, and events")}
                       autoComplete="off"
-                      value={query}
+                      name="q"
                       onChange={(event) => {
                         setQuery(event.target.value);
                         setResults([]);
@@ -1277,9 +1278,9 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                         setShowResults(true);
                       }}
                       onKeyDown={(event) => {
-                        if (event.key !== "Enter") return;
+                        if (event.key !== "Enter" || event.nativeEvent.isComposing) return;
                         event.preventDefault();
-                        submitHomeSearch("keyboard");
+                        event.currentTarget.form.requestSubmit();
                       }}
                       onFocus={() => setShowResults(true)}
                       placeholder={t("home.searchPlaceholder", "Search a city, venue or event")}
@@ -1288,13 +1289,12 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                   </div>
 
                   <button
-                    type="button"
-                    onClick={() => submitHomeSearch("button")}
+                    type="submit"
                     className="qa-action qa-action-strong h-12 w-full shrink-0 rounded-full border border-cyan-100/72 bg-gradient-to-r from-cyan-300 via-sky-300 to-emerald-200 px-4 text-sm font-semibold text-black transition hover:scale-[1.01] sm:h-[52px] sm:w-auto sm:px-5"
                   >
                     {t("home.exploreAtlas", "Explore the atlas")}
                   </button>
-                </div>
+                </form>
 
                   {showResults && results.length > 0 && (
                     <div aria-label={t("home.instantResults", "Instant search results")} className="absolute inset-x-0 top-12 z-[70] mt-1 w-auto max-h-[55vh] overflow-y-auto overflow-x-hidden rounded-[20px] border border-white/12 bg-[linear-gradient(180deg,rgba(15,15,17,0.98),rgba(11,11,13,0.97))] shadow-[0_24px_72px_rgba(0,0,0,0.48)] backdrop-blur-xl sm:inset-x-auto sm:top-full sm:mt-3 sm:w-full sm:max-h-[360px] sm:rounded-[24px] lg:max-h-[560px]">
