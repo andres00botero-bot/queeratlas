@@ -1165,6 +1165,22 @@ export const BOOKING_AFFILIATE_PHASE_ONE = [
     checkedAt: "2026-11-24",
   },
   {
+    placeId: "2318",
+    city: "new_orleans",
+    hotelName: "Hotel Le Marais",
+    bookingUrl: "https://www.booking.com/hotel/us/le-marais.html",
+    matchStatus: "approved_for_local_pilot",
+    checkedAt: "2026-11-24",
+  },
+  {
+    placeId: "2334",
+    city: "new_orleans",
+    hotelName: "Hotel Mazarin",
+    bookingUrl: "https://www.booking.com/hotel/us/st-louis.html",
+    matchStatus: "approved_for_local_pilot",
+    checkedAt: "2026-11-24",
+  },
+  {
     placeId: "1434",
     city: "montreal",
     hotelName: "Fairmont The Queen Elizabeth",
@@ -2208,6 +2224,9 @@ export const BOOKING_AFFILIATE_PHASE_ONE = [
   {placeId:"2698",city:"houston",hotelName:"Hotel ZaZa Museum District",bookingUrl:"https://www.booking.com/hotel/us/z-houston-texas.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
   {placeId:"2679",city:"houston",hotelName:"La Colombe d'Or Hotel",bookingUrl:"https://www.booking.com/hotel/us/la-colombe-d-39-or-amp-restaurant.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
   {placeId:"4316",city:"houston",hotelName:"Wanderstay Boutique Hotel",bookingUrl:"https://www.booking.com/hotel/us/wanderstay-boutique.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
+  {placeId:"2301",city:"las_vegas",hotelName:"MGM Grand",bookingUrl:"https://www.booking.com/hotel/us/mgm-grande.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
+  {placeId:"2299",city:"las_vegas",hotelName:"New York-New York Hotel & Casino",bookingUrl:"https://www.booking.com/hotel/us/new-york-new-york.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
+  {placeId:"2570",city:"las_vegas",hotelName:"Planet Hollywood Resort & Casino",bookingUrl:"https://www.booking.com/hotel/us/planet-hollywood.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-24"},
 ];
 
 export const BOOKING_AFFILIATE_PHASE_ONE_READY_FOR_CJ_REVIEW = BOOKING_AFFILIATE_PHASE_ONE.filter(
