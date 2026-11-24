@@ -7,6 +7,7 @@ import { polishVenueDescription } from "@/features/city/liveVibeFeature";
 import { getDisplayedSafetyShields, shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
 import { getSafetyToneClass } from "@/lib/placeSafetySignals";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
+import HotelKnowBeforeYouGo from "@/components/city/HotelKnowBeforeYouGo";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import SelectedEntityMiniMap from "@/components/city/SelectedEntityMiniMap";
 import { useLocale } from "@/components/i18n/LocaleProvider";
@@ -27,6 +28,7 @@ export default function SelectedPlaceSummary({
   const bookingHref = getBookingAffiliateLink(selectedPlace);
   const reviewCount = Number(selectedPlace.reviewCount || 0);
   const hasHours = Boolean(String(selectedPlace.hours || "").trim());
+  const isHotel = String(selectedPlace.type || "").toLowerCase() === "hotel";
 
   return (
     <>
@@ -54,7 +56,7 @@ export default function SelectedPlaceSummary({
             <p className="mt-1 text-sm leading-6 text-white/86">{addressLabel}</p>
           </div>
         </div>
-        {(!bookingHref || hasHours) ? (
+        {!isHotel && (!bookingHref || hasHours) ? (
           <div className="mt-4 border-t border-white/[0.06] pt-4">
             <p className="text-[10px] uppercase tracking-[0.18em] text-[#d7c0ff]/72">{t("city.openingHoursLabel", "Opening Hours")}</p>
             <p className="mt-1 text-sm leading-6 text-white/78">
@@ -66,6 +68,7 @@ export default function SelectedPlaceSummary({
       {polishVenueDescription(selectedPlace, cityName, typeLabels) && (
         <p className="my-5 text-[15px] leading-7 text-white/76">{polishVenueDescription(selectedPlace, cityName, typeLabels)}</p>
       )}
+      {isHotel ? <HotelKnowBeforeYouGo place={selectedPlace} t={t} className="mt-6" /> : null}
       {bookingHref ? (
         <section className="my-6 rounded-2xl border border-[#e7c67f]/24 bg-[#e7c67f]/[0.07] p-4" aria-label={t("city.bookingOptions", "Booking options")}>
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f2d997]/80">{t("city.bookThisStay", "Book this stay")}</p>
@@ -97,7 +100,7 @@ export default function SelectedPlaceSummary({
         </section>
       ) : null}
       <SelectedEntityMiniMap entity={selectedPlace} kind="venue" onExpand={showPlaceOnMap} />
-      {!bookingHref ? <VenuePracticalIntel place={selectedPlace} compact /> : null}
+      {!isHotel && !bookingHref ? <VenuePracticalIntel place={selectedPlace} compact /> : null}
       {selectedPlace.link && (
         <OfficialExternalLink
           href={normalizeExternalUrl(selectedPlace.link)}

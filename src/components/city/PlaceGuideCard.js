@@ -20,7 +20,7 @@ export default function PlaceGuideCard({
   const isSelected = String(selectedPlaceId) === String(place.id);
   const isHovered = String(hoveredPlaceId) === String(place.id);
   const typeLabel = typeLabels[place.type] || t("city.place", "Place");
-  const location = String(place.location || "").trim() || cityName;
+  const location = String(place.neighborhood || place.neighbourhood || place.area || place.location || "").trim() || cityName;
   const bookingHref = getBookingAffiliateLink(place);
   const isHotel = String(place.type || "").toLowerCase() === "hotel";
 
@@ -53,6 +53,11 @@ export default function PlaceGuideCard({
             <MapPin className="h-3 w-3 shrink-0 text-[#d7c0ff]/70" aria-hidden="true" />
             <span className="truncate">{location}</span>
           </p>
+          {isHotel ? (
+            <span className="mt-1 block text-xs font-semibold text-[#d7c0ff] underline decoration-[#d7c0ff]/35 underline-offset-4">
+              {t("city.viewHotelDetails", "View hotel details")} →
+            </span>
+          ) : null}
         </div>
         <ChevronRight
           className={`h-5 w-5 shrink-0 transition ${isSelected ? "text-[#e7c67f]" : "text-white/32 group-hover:translate-x-0.5 group-hover:text-[#d7c0ff]"}`}

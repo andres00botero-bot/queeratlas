@@ -25,9 +25,12 @@ import {
   supportsVenueAggregateRating,
 } from "@/lib/seo/venueStructuredData";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
+import HotelKnowBeforeYouGo from "@/components/city/HotelKnowBeforeYouGo";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
 import { ArrowLeft, MapPin } from "lucide-react";
+import { getMessage } from "@/lib/i18n/messages";
+import { getBookingAffiliateLink } from "@/lib/bookingAffiliate";
 
 export const revalidate = 300;
 
@@ -256,6 +259,7 @@ export async function generateMetadata({ params }) {
 
 export default async function CityVenueDetailPage({ params }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
+  const t = (key, fallback) => getMessage(locale, key, fallback);
   const resolved = await params;
   const { city, place, coreConfig } = await findVenueByParams(resolved?.city, resolved?.slug);
 
@@ -271,6 +275,7 @@ export default async function CityVenueDetailPage({ params }) {
   }
 
   const cityName = cityNameFromConfig(coreConfig, city);
+  const bookingHref = getBookingAffiliateLink(place);
   const searchCopy = getEntitySearchCopy({ kind: "venue", city, cityName, entity: place });
   const canonicalPath = buildVenuePath(city, place);
   const localizedCanonicalPath = localePath(canonicalPath, locale);
@@ -415,7 +420,24 @@ export default async function CityVenueDetailPage({ params }) {
           ) : null}
         </section>
 
-        <VenuePracticalIntel place={place} />
+        {bookingHref ? (
+          <section className="rounded-[20px] border border-[#e7c67f]/24 bg-[#e7c67f]/[0.07] p-4 sm:rounded-[24px] sm:p-6" aria-label={t("city.bookingOptions", "Booking options")}>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#f2d997]/80">{t("city.bookThisStay", "Book this stay")}</p>
+            <p className="mt-1 text-sm leading-6 text-white/76">{t("city.bookingAvailabilityHint", "Check current prices and availability on Booking.com.")}</p>
+            <a href={bookingHref} target="_blank" rel="sponsored noopener noreferrer" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-[#e7c67f] px-4 text-sm font-semibold text-[#211b33] transition hover:bg-[#f2d997] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e7c67f]/70">
+              {t("city.checkAvailabilityOnBooking", "Check availability on Booking.com")} <span className="ml-2" aria-hidden="true">↗</span>
+            </a>
+            <p className="mt-2 text-[11px] leading-4 text-white/58">{t("city.bookingAffiliateDisclosure", "Via Booking.com · Queer Atlas may earn a commission at no extra cost to you.")}</p>
+          </section>
+        ) : null}
+
+        {String(place?.type || "").toLowerCase() === "hotel" ? (
+          <div className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6">
+            <HotelKnowBeforeYouGo place={place} t={t} />
+          </div>
+        ) : (
+          <VenuePracticalIntel place={place} />
+        )}
 
         <section className="rounded-[20px] border border-cyan-200/18 bg-[linear-gradient(145deg,rgba(34,211,238,0.08),rgba(10,10,10,0.94))] p-4 sm:rounded-[24px] sm:p-6">
           <h2 className="text-lg font-semibold text-cyan-50">Related planning routes</h2>
