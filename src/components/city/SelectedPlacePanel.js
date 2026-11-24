@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { PenLine } from "lucide-react";
 import SelectedPlaceActions from "@/components/city/SelectedPlaceActions";
 import SelectedPlaceAdminControls from "@/components/city/SelectedPlaceAdminControls";
-import SelectedPlaceLiveVibePanel from "@/components/city/SelectedPlaceLiveVibePanel";
 import SelectedPlaceReviewComposer from "@/components/city/SelectedPlaceReviewComposer";
 import SelectedPlaceReviewsList from "@/components/city/SelectedPlaceReviewsList";
 import SelectedPlaceSummary from "@/components/city/SelectedPlaceSummary";
@@ -18,20 +17,7 @@ export default function SelectedPlacePanel({
   cityName,
   typeLabels,
   selectedPlaceSafetySignal,
-  liveVibeSummary,
-  liveVibeUpdatedLabel,
-  liveVibeTableMissing,
-  handleSubmitLiveVibe,
-  isSubmittingLiveVibe,
-  liveVibeMyActiveSignalKey,
-  liveVibeSubmittingKey,
-  liveVibeJustSentKey,
-  liveVibeOptions,
   isMember,
-  liveVibeSelectedOption,
-  isLoadingLiveVibe,
-  liveVibeError,
-  liveVibeCooldownRemainingSec,
   isAdmin,
   placeAdminOpen,
   onTogglePlaceAdmin,
@@ -122,24 +108,6 @@ export default function SelectedPlacePanel({
               selectedPlaceSafetySignal={selectedPlaceSafetySignal}
               showPlaceOnMap={showPlaceOnMap}
               onOpenReviews={() => onReviewCtaOpened?.()}
-              liveSignal={
-                <SelectedPlaceLiveVibePanel
-                  liveVibeSummary={liveVibeSummary}
-                  liveVibeUpdatedLabel={liveVibeUpdatedLabel}
-                  liveVibeTableMissing={liveVibeTableMissing}
-                  handleSubmitLiveVibe={handleSubmitLiveVibe}
-                  isSubmittingLiveVibe={isSubmittingLiveVibe}
-                  liveVibeMyActiveSignalKey={liveVibeMyActiveSignalKey}
-                  liveVibeSubmittingKey={liveVibeSubmittingKey}
-                  liveVibeJustSentKey={liveVibeJustSentKey}
-                  LIVE_VIBE_OPTIONS={liveVibeOptions}
-                  isMember={isMember}
-                  liveVibeSelectedOption={liveVibeSelectedOption}
-                  isLoadingLiveVibe={isLoadingLiveVibe}
-                  liveVibeError={liveVibeError}
-                  liveVibeCooldownRemainingSec={liveVibeCooldownRemainingSec}
-                />
-              }
       />
 
       <section className="mt-7 border-t border-white/[0.08] pt-5" aria-label={t("city.reviews", "Reviews")}>

@@ -390,6 +390,13 @@ const messages = {
       venueCategory: "Venue category",
       venuesCount: "{count} venues",
       openPlaceDetails: "Open place details for {place}",
+      checkRatesOnBooking: "Check rates on Booking.com",
+      checkAvailabilityAt: "Check availability for {place} on Booking.com",
+      checkAvailabilityOnBooking: "Check availability on Booking.com",
+      bookingOptions: "Booking options",
+      bookThisStay: "Book this stay",
+      bookingAvailabilityHint: "Check current prices and availability on Booking.com.",
+      bookingAffiliateDisclosure: "Via Booking.com · Queer Atlas may earn a commission at no extra cost to you.",
       place: "Place",
       selected: "Selected",
       open: "Open",
@@ -1380,6 +1387,43 @@ messages.pt.fieldGuide = {
   "choose": "Explorar uma cidade",
   "community": "Comunidade, contribuições e dicionário queer"
 };
+
+Object.assign(messages.es.city, {
+  checkRatesOnBooking: "Consultar tarifas en Booking.com",
+  checkAvailabilityAt: "Consultar disponibilidad para {place} en Booking.com",
+  checkAvailabilityOnBooking: "Consultar disponibilidad en Booking.com",
+  bookingOptions: "Opciones de reserva",
+  bookThisStay: "Reservar esta estancia",
+  bookingAvailabilityHint: "Consulta los precios y la disponibilidad actuales en Booking.com.",
+  bookingAffiliateDisclosure: "A través de Booking.com · Queer Atlas puede recibir una comisión sin coste adicional para ti.",
+});
+Object.assign(messages.fr.city, {
+  checkRatesOnBooking: "Voir les tarifs sur Booking.com",
+  checkAvailabilityAt: "Voir les disponibilités pour {place} sur Booking.com",
+  checkAvailabilityOnBooking: "Voir les disponibilités sur Booking.com",
+  bookingOptions: "Options de réservation",
+  bookThisStay: "Réserver ce séjour",
+  bookingAvailabilityHint: "Consultez les prix et disponibilités actuels sur Booking.com.",
+  bookingAffiliateDisclosure: "Via Booking.com · Queer Atlas peut percevoir une commission sans frais supplémentaires pour vous.",
+});
+Object.assign(messages.de.city, {
+  checkRatesOnBooking: "Preise auf Booking.com prüfen",
+  checkAvailabilityAt: "Verfügbarkeit für {place} auf Booking.com prüfen",
+  checkAvailabilityOnBooking: "Verfügbarkeit auf Booking.com prüfen",
+  bookingOptions: "Buchungsoptionen",
+  bookThisStay: "Diesen Aufenthalt buchen",
+  bookingAvailabilityHint: "Aktuelle Preise und Verfügbarkeit auf Booking.com prüfen.",
+  bookingAffiliateDisclosure: "Über Booking.com · Queer Atlas kann ohne Mehrkosten für dich eine Provision erhalten.",
+});
+Object.assign(messages.pt.city, {
+  checkRatesOnBooking: "Ver tarifas na Booking.com",
+  checkAvailabilityAt: "Ver disponibilidade para {place} na Booking.com",
+  checkAvailabilityOnBooking: "Ver disponibilidade na Booking.com",
+  bookingOptions: "Opções de reserva",
+  bookThisStay: "Reservar esta estadia",
+  bookingAvailabilityHint: "Veja os preços e a disponibilidade atuais na Booking.com.",
+  bookingAffiliateDisclosure: "Via Booking.com · a Queer Atlas pode receber uma comissão sem custo adicional para si.",
+});
 
 export function getMessage(locale, key, fallback = key) {
   const language = normalizeLocale(locale);
