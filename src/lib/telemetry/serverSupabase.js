@@ -37,7 +37,7 @@ export function getTelemetryServiceClient() {
   return serviceClient;
 }
 
-export async function getAuthorizedSeoAdminUser(request) {
+export async function getAuthenticatedRequestContext(request) {
   const authorization = String(request.headers.get("authorization") || "");
   const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() || "";
   const url = getSupabaseUrl();
@@ -58,9 +58,14 @@ export async function getAuthorizedSeoAdminUser(request) {
 
   const { data: userData, error: userError } = await userClient.auth.getUser(accessToken);
   if (userError || !userData?.user?.id) return null;
+  return { client: userClient, user: userData.user };
+}
 
-  const { data: isAdmin, error: adminError } = await userClient.rpc("qa_is_admin");
-  return !adminError && isAdmin === true ? userData.user : null;
+export async function getAuthorizedSeoAdminUser(request) {
+  const context = await getAuthenticatedRequestContext(request);
+  if (!context) return null;
+  const { data: isAdmin, error: adminError } = await context.client.rpc("qa_is_admin");
+  return !adminError && isAdmin === true ? context.user : null;
 }
 
 export async function hasAuthorizedSeoAdminRequest(request) {

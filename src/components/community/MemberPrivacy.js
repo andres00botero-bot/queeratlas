@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, LockKeyhole, Shield, UserRound, ArrowUpRight } from "lucide-react";
@@ -157,6 +158,7 @@ function MemberPrivacySettingsContent({ previewState = null }) {
   const pendingDeletion = Boolean(state?.profile?.deletion_requested_at);
   return <section className="space-y-4 text-[#F5F1E8]" aria-labelledby="privacy-title">
     <header><p className="text-xs font-semibold uppercase tracking-[0.15em] text-[#80D4C4]">{copy.eyebrow}</p><h1 id="privacy-title" className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{copy.title}</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#BCC7D2]">{copy.intro}</p></header>
+    {!previewState && <AmbassadorLink />}
     {!state ? <PrivacyStatus error={error} copy={copy} retry={refresh} /> : <>
       {pendingDeletion && <p role="status" className={`${panel} text-sm text-[#F2B38B]`}>{copy.deletePending}</p>}
       {!state.directory_open && <p className={`${panel} text-sm leading-6 text-[#BCC7D2]`}>{copy.staged}</p>}

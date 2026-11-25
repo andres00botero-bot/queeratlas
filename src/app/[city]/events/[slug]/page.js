@@ -1,4 +1,5 @@
 import { serializeJsonLd } from "@/lib/jsonLd";
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -371,6 +372,7 @@ export default async function CityEventDetailPage({ params }) {
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">
             {event.name}
           </h1>
+          <AmbassadorLink kind="event" entity={{ id: event.id, city, name: event.name, ambassador_venue_id: event.ambassador_venue_id, ambassador_protected: event.ambassador_protected, seo_indexable: event.seo_indexable, seo_quality_status: event.seo_quality_status }} />
           <p className="mt-2 text-sm text-white/70">
             {searchCopy?.description || `${cityName} event intelligence with schedule context, vibe signal, and safer routing.`}
           </p>

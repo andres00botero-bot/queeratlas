@@ -49,7 +49,7 @@ export default function ProfileSetupReminder() {
     return () => window.removeEventListener(PRIVACY_CHANGED, refresh);
   }, [isLoading, refresh, userId]);
 
-  if (!userId || !needsSetup || dismissedForUserId === userId || pathname === "/privacy-settings" || pathname.startsWith("/admin")) {
+  if (!userId || !needsSetup || dismissedForUserId === userId || pathname === "/ambassador" || pathname === "/privacy-settings" || pathname.startsWith("/admin")) {
     return null;
   }
 

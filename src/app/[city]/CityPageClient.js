@@ -20,7 +20,7 @@ import { captureOperationalError } from "@/lib/monitoring";
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { trackKpiEvent } from "@/lib/analytics";
 import { showActionFeedback } from "@/lib/actionFeedback";
-import { resolveAdminAccess } from "@/lib/adminAccess";
+import { resolveContributionAccess } from "@/lib/adminAccess";
 import { createContentSubmission } from "@/lib/contentSubmissions";
 import {
   buildPlaceVibeDualWriteFields,
@@ -393,6 +393,7 @@ export default function CityPageClient({ indexableContent = null }) {
   const [activeVenueFilter, setActiveVenueFilter] = useState("");
   const { isMember, user, memberName } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canPublishCityDirect, setCanPublishCityDirect] = useState(false);
   const [isTrustedContributor, setIsTrustedContributor] = useState(false);
   const [placeAdminOpen, setPlaceAdminOpen] = useState(false);
   const [eventAdminOpen, setEventAdminOpen] = useState(false);
@@ -661,29 +662,19 @@ export default function CityPageClient({ indexableContent = null }) {
 
     queueMicrotask(async () => {
       if (!isMember || !user?.email) {
-        if (active) setIsAdmin(false);
+        if (active) {
+          setIsAdmin(false);
+          setIsTrustedContributor(false);
+          setCanPublishCityDirect(false);
+        }
         return;
       }
 
-      const adminRes = await resolveAdminAccess({
-        email: user?.email,
-      });
-      const isAdminAccess = Boolean(adminRes?.isAdmin);
-      let trustedAccess = false;
-      if (isAdminAccess) {
-        trustedAccess = true;
-      } else if (user?.id) {
-        const profileRes = await supabase
-          .from("member_profiles")
-          .select("trusted_contributor")
-          .eq("user_id", user.id)
-          .maybeSingle();
-        trustedAccess = Boolean(profileRes?.data?.trusted_contributor);
-      }
-
+      const access = await resolveContributionAccess({ email: user.email, userId: user.id });
       if (active) {
-        setIsAdmin(isAdminAccess);
-        setIsTrustedContributor(trustedAccess);
+        setIsAdmin(access.isAdmin);
+        setIsTrustedContributor(access.isTrustedContributor);
+        setCanPublishCityDirect(access.canPublishDirect);
       }
     });
 
@@ -3413,7 +3404,7 @@ export default function CityPageClient({ indexableContent = null }) {
         }),
       };
 
-      if (!canPublishDirect) {
+      if (!canPublishCityDirect) {
         const submissionRes = await createContentSubmission({
           entityType: "place",
           actionType: "create",
@@ -3529,7 +3520,7 @@ export default function CityPageClient({ indexableContent = null }) {
       };
       const hasRequestedEventIntel = hasEventIntel(insertBasePayload.event_intel);
 
-      if (!canPublishDirect) {
+      if (!canPublishCityDirect) {
         const submissionRes = await createContentSubmission({
           entityType: "event",
           actionType: "create",

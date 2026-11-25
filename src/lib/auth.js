@@ -9,7 +9,7 @@ import { privacyCall, privateAvatar } from "@/lib/memberPrivacy";
 import { prepareMemberImage } from "@/lib/memberImages";
 
 const AuthContext = createContext(null);
-const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/privacy-settings"];
+const ALLOWED_POST_LOGIN_PREFIXES = ["/", "/privacy-settings", "/ambassador"];
 const MEMBER_AVATAR_BUCKET = "member-avatars";
 const MAX_MEMBER_AVATAR_BYTES = 5 * 1024 * 1024;
 

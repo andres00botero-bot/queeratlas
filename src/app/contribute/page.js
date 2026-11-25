@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -12,7 +13,7 @@ import { supabase } from "@/lib/supabase";
 import { mergeSeedEventsAsync } from "@/lib/seedMerge";
 import { fetchPlacesQueryWithFallback } from "@/lib/placesDataApi";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
-import { resolveAdminAccess } from "@/lib/adminAccess";
+import { resolveContributionAccess } from "@/lib/adminAccess";
 import {
   createContentSubmission,
   listContentSubmissions,
@@ -268,6 +269,7 @@ export default function ContributePage() {
   const [showRequestForm, setShowRequestForm] = useState(false);
   const { toast, showToast } = useActionToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canPublishCityDirect, setCanPublishCityDirect] = useState(false);
   const [isTrustedContributor, setIsTrustedContributor] = useState(false);
   const [moderationSyncNotice, setModerationSyncNotice] = useState("");
   const [pendingSubmissions, setPendingSubmissions] = useState([]);
@@ -524,32 +526,13 @@ export default function ContributePage() {
         setReports(getReports());
         setBlockedItems(getBlockedItems());
 
-        let adminAccess = false;
-        let trustedAccess = false;
         const notices = [];
-        const adminRes = await resolveAdminAccess({
-          email: user?.email,
-        });
-        adminAccess = Boolean(adminRes?.isAdmin);
-        if (adminAccess) {
-          trustedAccess = true;
-        } else if (user?.id) {
-          const profileRes = await supabase
-            .from("member_profiles")
-            .select("trusted_contributor")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          if (profileRes.error && isMissingTableError(profileRes.error)) {
-            notices.push("Member profiles are missing trusted contributor column. Run the latest Supabase SQL scripts.");
-          }
-          trustedAccess = Boolean(profileRes?.data?.trusted_contributor);
-        }
+        const access = await resolveContributionAccess({ email: user?.email, userId: user?.id });
+        const adminAccess = access.isAdmin;
         setIsAdmin(adminAccess);
-        setIsTrustedContributor(trustedAccess);
-        if (adminRes?.error && isMissingTableError(adminRes.error)) {
-          notices.push("Admin table is missing. Run the latest Supabase SQL scripts.");
-        }
-
+        setIsTrustedContributor(access.isTrustedContributor);
+        setCanPublishCityDirect(access.canPublishDirect);
+        if (access.error) notices.push("Publishing permissions could not be confirmed.");
         const synced = adminAccess
           ? await syncModerationFromCloud()
           : await syncBlockedItemsFromCloud();
@@ -874,7 +857,7 @@ export default function ContributePage() {
         created_by: user.id,
       };
 
-      if (!canPublishDirect) {
+      if (!canPublishCityDirect) {
         const submissionRes = await createContentSubmission({
           entityType: "place",
           actionType: "create",
@@ -1015,7 +998,7 @@ export default function ContributePage() {
         created_by: user.id,
       };
 
-      if (!canPublishDirect) {
+      if (!canPublishCityDirect) {
         const submissionRes = await createContentSubmission({
           entityType: "event",
           actionType: "create",
@@ -1796,13 +1779,14 @@ export default function ContributePage() {
                 Grow the atlas with places, events, stories, guides, and corrections.
                 This is where community turns signal into infrastructure.
               </p>
+              <AmbassadorLink />
               <div className="mt-4 flex flex-wrap gap-2">
                 <span className={`rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.16em] ${
-                  canPublishDirect
+                  canPublishCityDirect
                     ? "border-emerald-200/28 bg-emerald-200/14 text-emerald-100"
                     : "border-amber-200/26 bg-amber-200/14 text-amber-100"
                 }`}>
-                  {canPublishDirect ? "Live publish enabled" : "Pending review mode"}
+                  {canPublishCityDirect ? "Live publish enabled" : "Pending review mode"}
                 </span>
                 {isTrustedContributor && (
                   <span className="rounded-full border border-cyan-200/28 bg-cyan-200/14 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-cyan-100">
@@ -1852,7 +1836,7 @@ export default function ContributePage() {
             <div className="mb-5">
               <p className="text-xs uppercase tracking-[0.25em] text-emerald-200">Add to Atlas</p>
               <h2 className="mt-2 text-2xl font-semibold text-white">
-                {canPublishDirect ? `Publish to ${cityTitle}` : `Submit to ${cityTitle}`}
+                {canPublishCityDirect ? `Publish to ${cityTitle}` : `Submit to ${cityTitle}`}
               </h2>
             </div>
 

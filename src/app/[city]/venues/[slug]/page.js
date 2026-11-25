@@ -1,4 +1,5 @@
 import { serializeJsonLd } from "@/lib/jsonLd";
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
 import { cache } from "react";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -331,6 +332,7 @@ export default async function CityVenueDetailPage({ params }) {
         <header className="rounded-[22px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[28px] sm:p-6">
           <p className="text-[11px] uppercase tracking-[0.16em] text-cyan-100/78">Venue Detail</p>
           <h1 className="mt-2 text-3xl font-semibold tracking-[-0.02em]">{place.name}</h1>
+          <AmbassadorLink kind="venue" entity={{ id: place.id, city, name: place.name, type: place.type, ambassador_protected: place.ambassador_protected, seo_indexable: place.seo_indexable, seo_quality_status: place.seo_quality_status }} />
           <CityPanelButton
             city={city}
             entityKind="place"

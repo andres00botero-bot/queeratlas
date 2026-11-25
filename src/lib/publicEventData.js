@@ -18,6 +18,8 @@ function toCalendarEvent(event = {}) {
     start_date: normalized.startDate || "",
     end_date: normalized.endDate || "",
     location: normalized.location || "",
+    ambassador_venue_id: normalized.ambassador_venue_id ?? null,
+    hours: normalized.hours || "",
     vibe: normalized.vibe || "",
     vibe_tags: Array.isArray(normalized.vibe_tags) ? normalized.vibe_tags : [],
     description: normalized.description || "",

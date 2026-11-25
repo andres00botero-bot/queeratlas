@@ -1,5 +1,6 @@
 "use client";
 
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import { ArrowUpRight, MapPin } from "lucide-react";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
@@ -42,6 +43,7 @@ export default function SelectedPlaceSummary({
             : t("city.reviews", "Reviews")}
         </button>
       </div>
+      <AmbassadorLink kind="venue" entity={selectedPlace} />
       <VibeTagChips entity={selectedPlace} tone="cyan" className="mb-4" includeTypeFallback includeMixedFallback />
       {shouldShowLegacyVibe(selectedPlace) && (
         <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">

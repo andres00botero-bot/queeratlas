@@ -498,10 +498,12 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("join") !== "true") return;
+    const ambassadorSignIn = params.get("ambassador") === "signin";
+    if (!ambassadorSignIn && params.get("join") !== "true") return;
 
     queueMicrotask(() => {
-      openSignup("/", "signup", "join_link");
+      if (ambassadorSignIn) openSignup("/ambassador", "signin", "ambassador");
+      else openSignup("/", "signup", "join_link");
       window.history.replaceState({}, "", "/");
     });
   }, [openSignup]);

@@ -90,10 +90,17 @@ export async function resolveContributionAccess({ client = supabase, email = "",
     }
 
     const isTrustedContributor = Boolean(data?.trusted_contributor);
+    let canPublishDirect = isTrustedContributor;
+    if (isTrustedContributor) {
+      const assignments = await client.from("qa_ambassador_assignments")
+        .select("id").eq("user_id", normalizedUserId).limit(1);
+      const legacyInstallation = ["42P01", "PGRST205"].includes(assignments.error?.code);
+      canPublishDirect = legacyInstallation || (!assignments.error && assignments.data?.length === 0);
+    }
     return {
       isAdmin: false,
       isTrustedContributor,
-      canPublishDirect: isTrustedContributor,
+      canPublishDirect,
       error: adminAccess?.error || null,
     };
   } catch (error) {
