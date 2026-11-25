@@ -226,6 +226,7 @@ declare
   allowed text[] := array['name','description','location','lat','lng','link','hours','vibe_tags'];
   key text;
   intel_keys text[] := array['queue_wait','best_nights','crowd_mix','dress_code','staff_inclusivity'];
+  intel_column text := case when p_entity_type='event' then 'event_intel' else 'venue_intel' end;
   intel jsonb;
   evidence jsonb;
 begin
@@ -237,7 +238,8 @@ begin
 
   if p_entity_type='event' then
     target := 'public.events'::regclass;
-    allowed := allowed || array['ambassador_venue_id','date','start_date','end_date','event_status','ticket_url'];
+    intel_keys := array['entry_wait','best_arrival','crowd_mix','dress_code','host_inclusivity'];
+    allowed := allowed || intel_keys || array['ambassador_venue_id','date','start_date','end_date','event_status','ticket_url'];
   elsif p_entity_type='venue' then
     target := 'public.places'::regclass;
     allowed := array_append(allowed,'type') || intel_keys;
@@ -311,18 +313,18 @@ begin
     end if;
     patch := patch || jsonb_build_object('vibe',initcap(replace(patch->'vibe_tags'->>0,'_',' ')));
   end if;
-  if p_entity_type='venue' and patch ?| intel_keys then
-    intel := coalesce(nullif(before_row->'venue_intel','null'::jsonb),'{}');
+  if patch ?| intel_keys then
+    intel := coalesce(nullif(before_row->intel_column,'null'::jsonb),'{}');
     evidence := coalesce(nullif(intel->'topic_evidence','null'::jsonb),nullif(intel->'topicEvidence','null'::jsonb),'{}');
     foreach key in array intel_keys loop
       if patch ? key then
-        if jsonb_typeof(patch->key)<>'string' or length(patch->>key)>320 then raise exception 'Invalid venue intelligence text'; end if;
+        if jsonb_typeof(patch->key)<>'string' or length(patch->>key)>320 then raise exception 'Invalid intelligence text'; end if;
         intel := jsonb_set(intel,array[key],to_jsonb(btrim(patch->>key)));
         evidence := jsonb_set(evidence,array[key],jsonb_build_object('status','community_signal','checked_at',current_date));
         patch := patch-key;
       end if;
     end loop;
-    patch := patch || jsonb_build_object('venue_intel',intel || jsonb_build_object('topic_evidence',evidence));
+    patch := patch || jsonb_build_object(intel_column,intel || jsonb_build_object('topic_evidence',evidence));
   end if;
   candidate := coalesce(before_row,'{}'::jsonb) || patch;
   assigned_venue := (candidate->>'ambassador_venue_id')::bigint;
@@ -393,7 +395,7 @@ begin
   end if;
   select jsonb_object_agg(key,value) into restore_data from jsonb_each(h.before_data) f
     where key = any(array['name','description','hours','link','location','lat','lng','type',
-      'date','start_date','end_date','ticket_url','event_status','ambassador_venue_id','venue_intel','vibe','vibe_tags'])
+      'date','start_date','end_date','ticket_url','event_status','ambassador_venue_id','venue_intel','event_intel','vibe','vibe_tags'])
     and value is distinct from h.after_data->key;
   if restore_data is null then raise exception 'No changed editorial fields to restore'; end if;
   restored := public.qa_ambassador_apply(target,h.entity_id,restore_data);

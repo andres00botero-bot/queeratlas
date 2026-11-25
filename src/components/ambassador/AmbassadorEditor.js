@@ -6,12 +6,14 @@ import VibeTagPicker from "@/components/ui/VibeTagPicker";
 import { buildPlaceVibeDualWriteFields, buildVibeDualWriteFields } from "@/lib/vibeTaxonomy";
 import PracticalIntelFields from "@/components/city/PracticalIntelFields";
 import { VENUE_INTEL_FIELDS, normalizeVenueIntel, getVenueIntelLabels, getVenueIntelGuidance } from "@/lib/venueIntel";
+import { EVENT_FIELDS } from "@/lib/entityIntel";
 import VenueLocationPicker from "@/components/location/VenueLocationPicker";
 import { TYPE_LABELS } from "@/features/city/cityPageConstants";
 import { normalizeEventRange } from "@/features/events/eventFormatUtils";
 import { normalizeConfirmedCoordinates } from "@/lib/cityGeocodingContext";
 import { supabase } from "@/lib/supabase";
 
+const eventLabels = { entry_wait: "Entry wait", best_arrival: "Best arrival time", crowd_mix: "Attendee mix", dress_code: "Dress code in practice", host_inclusivity: "Host and security inclusion" };
 const control = "mt-2 w-full min-h-12 rounded-xl border border-white/20 bg-[#171623] px-3 py-2 text-base text-white focus:border-[#cfc0ff] focus:outline-none focus:ring-2 focus:ring-[#a793ec]/40";
 const label = "block text-sm font-semibold text-[#e7e0f2]";
 const primary = "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#cfbaff] px-5 font-semibold text-[#211634] hover:bg-[#e1d4ff] disabled:opacity-50";
@@ -23,10 +25,10 @@ function EditorField({ title, field, draft, change, ...props }) {
 function initialDraft(kind, row, venue) {
   const data = row || {};
   const location = row || venue || {};
-  const intel = normalizeVenueIntel(data);
+  const intel = kind === "event" ? data.event_intel || {} : normalizeVenueIntel(data);
   const range = normalizeEventRange(data);
   return {
-    ...Object.fromEntries(VENUE_INTEL_FIELDS.map(([key, field]) => [key, intel[field]])),
+    ...Object.fromEntries((kind === "event" ? EVENT_FIELDS : VENUE_INTEL_FIELDS).map(([key, field]) => [key, intel[key] ?? intel[field] ?? ""])),
     vibe_tags: (kind === "venue" ? buildPlaceVibeDualWriteFields : buildVibeDualWriteFields)({ type: data.type, vibe: data.vibe, vibeTags: data.vibe_tags }).vibe_tags,
     name: data.name || "", description: data.description || "", link: data.link || "",
     hours: data.hours || "", location: location.location || "", pin: normalizeConfirmedCoordinates(location),
@@ -43,7 +45,7 @@ function editableValues(draft, kind) {
     lat: draft.pin?.lat ?? null, lng: draft.pin?.lng ?? null,
   };
   if (kind === "venue") return { ...values, type: draft.type, ...Object.fromEntries(VENUE_INTEL_FIELDS.map(([key]) => [key, draft[key].trim()])) };
-  return { ...values, start_date: draft.start_date || null, end_date: draft.end_date || draft.start_date || null,
+  return { ...values, ...Object.fromEntries(EVENT_FIELDS.map(([key]) => [key, draft[key].trim()])), start_date: draft.start_date || null, end_date: draft.end_date || draft.start_date || null,
     ticket_url: draft.ticket_url.trim() || null, event_status: draft.event_status,
     ambassador_venue_id: draft.ambassador_venue_id || null };
 }
@@ -79,7 +81,7 @@ export default function AmbassadorEditor({ kind, row, assignment, venues, onClos
     const payload = Object.fromEntries(Object.entries(next).filter(([key, value]) => !row || value !== previous[key]));
     const tags = !event && draft.type === "store" ? ["store"] : draft.vibe_tags.filter(tag => event || tag !== "store");
     if (!row || JSON.stringify(tags) !== JSON.stringify(original.vibe_tags)) payload.vibe_tags = tags;
-    if (!row && !event) for (const [key] of VENUE_INTEL_FIELDS) { if (!payload[key]) delete payload[key]; }
+    if (!row) for (const [key] of (event ? EVENT_FIELDS : VENUE_INTEL_FIELDS)) { if (!payload[key]) delete payload[key]; }
     if (!Object.keys(payload).length) { setError("There are no changes to save."); return; }
     if ((!row || "location" in payload || "lat" in payload || "lng" in payload) && (!next.location || !draft.pin)) {
       setError("Choose the public address and confirm its pin before publishing."); return;
@@ -133,6 +135,7 @@ export default function AmbassadorEditor({ kind, row, assignment, venues, onClos
       <VenueLocationPicker address={draft.location} city={assignment.city} location={draft.pin} entityLabel={event ? "Event" : "Venue"}
         onAddressChange={value => change("location", value)} onLocationChange={value => change("pin", normalizeConfirmedCoordinates(value))} />
       <label className={label}>Description<textarea className={control} rows={5} value={draft.description} onChange={e => change("description", e.target.value)} /></label>
+      {event && <PracticalIntelFields title="Event intelligence" description="Share practical details specific to this event." fields={EVENT_FIELDS.map(([key]) => ({ key, label: eventLabels[key], value: draft[key], onChange: value => change(key, value.slice(0, 320)) }))} />}
       {!event && <PracticalIntelFields title="Venue intelligence" description="Share current details you can confirm for this venue." fields={VENUE_INTEL_FIELDS.map(([key, field]) => ({
         key, label: getVenueIntelLabels(draft.type)[field], placeholder: getVenueIntelGuidance(draft.type)[field],
         value: draft[key], onChange: value => change(key, value.slice(0, 320)),

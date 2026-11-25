@@ -1,4 +1,4 @@
-const EVENT_FIELDS = [
+export const EVENT_FIELDS = [
   ["entry_wait", "entryWait"],
   ["best_arrival", "bestArrival"],
   ["crowd_mix", "crowdMix"],
