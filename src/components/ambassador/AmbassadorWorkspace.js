@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import AmbassadorBadge from "./AmbassadorBadge";
 import { ArrowLeft, ArrowUpRight, CalendarDays, CheckCircle2, MapPin, PencilLine, Plus, Search } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -62,7 +63,7 @@ function Inventory({ assignment, initialKind, initialId, onEditing }) {
 
   return <>
     <div className="border-b border-[#574464] pb-6">
-      <p className="mb-2 flex items-center gap-2 text-sm font-medium text-[#d0b7ed]"><MapPin size={15} aria-hidden="true" />{isScoped ? "Venue ambassador" : "City ambassador"}{isScoped && ` · ${prettyCity(assignment.city)}`}</p>
+      <p className="mb-2 flex items-center gap-2 text-sm font-medium text-[#d0b7ed]"><AmbassadorBadge role={assignment.role} />{isScoped && ` · ${prettyCity(assignment.city)}`}</p>
       <h1 className="break-words text-4xl font-semibold tracking-tight text-[#fbf4ff] sm:text-6xl">{title}</h1>
       {!editor && records && !failed && <div className="mt-6 flex flex-wrap gap-3">
         <button type="button" onClick={() => open("event")} className={primary}><Plus size={17} /> Create event</button>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AmbassadorBadge from "./AmbassadorBadge";
 import { useEffect, useState } from "react";
 import { PencilLine } from "lucide-react";
 import { useAuth } from "@/lib/auth";
@@ -26,7 +27,12 @@ export default function AmbassadorLink({ kind, entity }) {
     params.set("kind", kind);
     params.set("id", String(entity.id));
   }
-  return <Link href={`/ambassador?${params}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-cyan-100 underline decoration-cyan-100/40 underline-offset-4 hover:text-white">
+  const link = <Link href={`/ambassador?${params}`} className="inline-flex min-h-11 items-center gap-2 rounded-xl px-2 text-sm font-semibold text-cyan-100 underline decoration-cyan-100/40 underline-offset-4 hover:text-white">
     <PencilLine size={16} aria-hidden="true" />{entity ? `Edit ${kind}` : "My ambassador workspace"}
   </Link>;
+  if (entity) return link;
+  return <div className="flex flex-wrap items-center gap-2">
+    {[...new Set(result.assignments.map(item => item.role))].map(role => <AmbassadorBadge key={role} role={role} />)}
+    {link}
+  </div>;
 }
