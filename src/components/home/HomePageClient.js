@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import CityGlobe from "./CityGlobe";
+import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -1162,6 +1163,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                 >
                   {t("home.yourAtlas", "Your Atlas")}
                 </button>
+                <AmbassadorLink />
                 <button
                   onClick={() => router.push("/community")}
                   className="qa-action hidden h-10 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 text-sm font-medium text-emerald-100/92 backdrop-blur transition hover:border-emerald-200/52 hover:text-emerald-50 sm:inline-flex"
