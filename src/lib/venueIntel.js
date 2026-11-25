@@ -1,4 +1,4 @@
-const VENUE_INTEL_FIELDS = [
+export const VENUE_INTEL_FIELDS = [
   ["queue_wait", "queueWait"],
   ["best_nights", "bestNights"],
   ["crowd_mix", "crowdMix"],

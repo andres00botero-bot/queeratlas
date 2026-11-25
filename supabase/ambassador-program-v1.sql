@@ -223,8 +223,11 @@ declare
   patch jsonb;
   assigned_venue bigint;
   request_key uuid;
-  allowed text[] := array['name','description','location','lat','lng','link','hours'];
+  allowed text[] := array['name','description','location','lat','lng','link','hours','vibe_tags'];
   key text;
+  intel_keys text[] := array['queue_wait','best_nights','crowd_mix','dress_code','staff_inclusivity'];
+  intel jsonb;
+  evidence jsonb;
 begin
   select * into scope from public.qa_ambassador_assignments
     where id=p_assignment_id and user_id=auth.uid() and status='active'
@@ -237,7 +240,7 @@ begin
     allowed := allowed || array['ambassador_venue_id','date','start_date','end_date','event_status','ticket_url'];
   elsif p_entity_type='venue' then
     target := 'public.places'::regclass;
-    allowed := array_append(allowed,'type');
+    allowed := array_append(allowed,'type') || intel_keys;
     if scope.role='venue' and p_entity_id is distinct from scope.venue_id then raise insufficient_privilege; end if;
   else
     raise exception 'Unknown entity type';
@@ -249,7 +252,7 @@ begin
   request_key := (p_payload->>'request_id')::uuid;
   patch := p_payload-'request_id';
   if patch='{}' or exists(select from jsonb_each(patch) f
-      where not f.key=any(allowed) or jsonb_typeof(f.value) not in ('null','string','number')) then
+      where not f.key=any(allowed) or (f.key<>'vibe_tags' and jsonb_typeof(f.value) not in ('null','string','number'))) then
     raise exception 'Unsupported editorial fields';
   end if;
 
@@ -294,6 +297,33 @@ begin
     patch := patch || jsonb_build_object('city',scope.city);
   end if;
 
+  if patch ? 'vibe_tags' then
+    if jsonb_typeof(patch->'vibe_tags') <> 'array' then raise exception 'Invalid vibe tags'; end if;
+    if jsonb_array_length(patch->'vibe_tags')>3 or exists (
+      select from jsonb_array_elements_text(patch->'vibe_tags') tag
+      where tag is null or tag not in ('techno','pop','mixed','electronic','men_only','after','chill','cultural','fetish','social','cozy','massive','luxury','festival','underground','cruise','relax','drag','industrial','store','service')
+      group by tag
+    ) then raise exception 'Choose up to three standard vibe tags'; end if;
+    if p_entity_type='venue' and coalesce(patch->>'type',before_row->>'type')='store' then
+      patch := patch || '{"vibe_tags":["store"]}'::jsonb;
+    elsif p_entity_type='venue' and (patch->'vibe_tags') ?| array['store','service'] then
+      raise exception 'Invalid venue vibe tags';
+    end if;
+    patch := patch || jsonb_build_object('vibe',initcap(replace(patch->'vibe_tags'->>0,'_',' ')));
+  end if;
+  if p_entity_type='venue' and patch ?| intel_keys then
+    intel := coalesce(nullif(before_row->'venue_intel','null'::jsonb),'{}');
+    evidence := coalesce(nullif(intel->'topic_evidence','null'::jsonb),nullif(intel->'topicEvidence','null'::jsonb),'{}');
+    foreach key in array intel_keys loop
+      if patch ? key then
+        if jsonb_typeof(patch->key)<>'string' or length(patch->>key)>320 then raise exception 'Invalid venue intelligence text'; end if;
+        intel := jsonb_set(intel,array[key],to_jsonb(btrim(patch->>key)));
+        evidence := jsonb_set(evidence,array[key],jsonb_build_object('status','community_signal','checked_at',current_date));
+        patch := patch-key;
+      end if;
+    end loop;
+    patch := patch || jsonb_build_object('venue_intel',intel || jsonb_build_object('topic_evidence',evidence));
+  end if;
   candidate := coalesce(before_row,'{}'::jsonb) || patch;
   assigned_venue := (candidate->>'ambassador_venue_id')::bigint;
   if scope.role='venue' and p_entity_type='event' and assigned_venue is distinct from scope.venue_id then
@@ -363,7 +393,7 @@ begin
   end if;
   select jsonb_object_agg(key,value) into restore_data from jsonb_each(h.before_data) f
     where key = any(array['name','description','hours','link','location','lat','lng','type',
-      'date','start_date','end_date','ticket_url','event_status','ambassador_venue_id'])
+      'date','start_date','end_date','ticket_url','event_status','ambassador_venue_id','venue_intel','vibe','vibe_tags'])
     and value is distinct from h.after_data->key;
   if restore_data is null then raise exception 'No changed editorial fields to restore'; end if;
   restored := public.qa_ambassador_apply(target,h.entity_id,restore_data);
