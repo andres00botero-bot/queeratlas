@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import CityGlobe from "./CityGlobe";
-import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
+import { AssignmentLink, useMyAssignments } from "@/components/ambassador/AmbassadorLink";
+import AmbassadorBadge from "@/components/ambassador/AmbassadorBadge";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
@@ -214,6 +215,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
   const [homeFocusCity, setHomeFocusCity] = useState("");
   const [homeFocusSource, setHomeFocusSource] = useState("");
   const viewedHomeSectionsRef = useRef(new Set());
+  const assignments = useMyAssignments();
   const {
     isMember,
     memberName,
@@ -1032,9 +1034,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
       },
     },
   ];
-  const heroIdentityLabel = isMember
-    ? `${memberName || "Alias"} | ${memberProfile?.pronouns || "Pronomen"}`
-    : "";
+
 
   const membership = (
 <MembershipPreview compact={!!fieldGuide}
@@ -1140,8 +1140,10 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                 {t("home.support", "Support")}
               </a>
               {isMember && (
-                <div className="qa-eyebrow hidden text-white/76 sm:block lg:rounded-full lg:border lg:border-white/14 lg:bg-white/5 lg:px-4 lg:py-2 lg:backdrop-blur">
-                  {heroIdentityLabel}
+                <div className={`qa-eyebrow min-w-0 max-w-full items-center gap-1.5 text-white/76 ${assignments.length ? "inline-flex" : "hidden sm:inline-flex"}`}>
+                  <span className="truncate">{memberProfile?.displayName || memberName || "Alias"}</span>
+                  {[...new Set(assignments.map(item => item.role))].map(role => <AmbassadorBadge key={role} role={role} />)}
+                  {memberProfile?.pronouns && <span className="hidden sm:inline"> · {memberProfile.pronouns}</span>}
                 </div>
               )}
 
@@ -1163,13 +1165,7 @@ export default function HomePageClient({ initialHomeData = null, shortcuts = nul
                 >
                   {t("home.yourAtlas", "Your Atlas")}
                 </button>
-                <AmbassadorLink />
-                <button
-                  onClick={() => router.push("/community")}
-                  className="qa-action hidden h-10 items-center justify-center rounded-full border border-emerald-200/30 bg-emerald-200/12 px-4 text-sm font-medium text-emerald-100/92 backdrop-blur transition hover:border-emerald-200/52 hover:text-emerald-50 sm:inline-flex"
-                >
-                  {t("home.community", "Community")}
-                </button>
+                <AssignmentLink assignments={assignments} />
                   {isAdmin && (
                   <button
                     onClick={() => router.push("/admin")}
