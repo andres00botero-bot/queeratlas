@@ -53,7 +53,9 @@ const findVenueByParams = cache(async (cityParam = "", slugParam = "") => {
     filters: isDatabaseId ? { city, id: parsed.id } : { city },
   });
   const cityPlaces = (Array.isArray(allPlaces) ? allPlaces : []).filter(
-    (row) => normalizeCityKey(String(row?.city || "")) === city
+    (row) => normalizeCityKey(String(row?.city || "")) === city &&
+      !(String(row?.type || "").toLowerCase() === "hotel" &&
+        String(row?.seo_quality_status || "").toLowerCase() === "rejected")
   );
 
   const byId = parsed.id

@@ -3025,6 +3025,8 @@ export const BOOKING_AFFILIATE_PHASE_ONE = [
   {placeId:"2914",city:"richmond",hotelName:"Moxy Richmond Downtown",bookingUrl:"https://www.booking.com/hotel/us/moxy-richmond-downtown.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-25"},
   {placeId:"2915",city:"richmond",hotelName:"Graduate by Hilton Richmond",bookingUrl:"https://www.booking.com/hotel/us/graduate-richmond.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-25"},
   {placeId:"2916",city:"richmond",hotelName:"Linden Row Inn",bookingUrl:"https://www.booking.com/hotel/us/linden-row-inn.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-25"},
+  {placeId:"1631",city:"montenegro",hotelName:"Regent Porto Montenegro",bookingUrl:"https://www.booking.com/hotel/me/regent-porto-montenegro.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-26"},
+  {placeId:"1633",city:"montenegro",hotelName:"The Chedi Luštica Bay",bookingUrl:"https://www.booking.com/hotel/me/the-chedi-lustica-bay.html",matchStatus:"approved_for_local_pilot",checkedAt:"2026-11-26"},
 ];
 
 export const BOOKING_AFFILIATE_PHASE_ONE_READY_FOR_CJ_REVIEW = BOOKING_AFFILIATE_PHASE_ONE.filter(

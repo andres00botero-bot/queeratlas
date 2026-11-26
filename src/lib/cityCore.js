@@ -1,4 +1,10 @@
 export const cityCoreConfig = {
+  "montenegro": {
+    "center": [18.77, 42.36],
+    "title": "Queer Montenegro",
+    "country": "Montenegro",
+    "vibe": "coastal"
+  },
   "berlin": {
     "center": [
       13.405,
