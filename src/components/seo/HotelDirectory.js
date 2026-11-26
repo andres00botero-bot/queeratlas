@@ -35,7 +35,7 @@ export default function HotelDirectory({ routes }) {
             <p className="mt-2 text-sm leading-6 text-slate-300">{copy}</p>
           </article>)}
         </section>
-        <p className="max-w-xl text-xs leading-5 text-slate-400">Queer Atlas may earn a commission when you book through a Booking.com partner link.</p>
+        <p className="max-w-xl text-xs leading-5 text-slate-400">Found your stay here? Please book through our Booking.com links. The commission helps us keep Queer Atlas running and our city guides up to date.</p>
       </div>
     </main>
   );
