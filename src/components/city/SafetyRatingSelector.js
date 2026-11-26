@@ -3,6 +3,7 @@
 import { Shield } from "lucide-react";
 
 export default function SafetyRatingSelector({
+  label, name = "venue-safety-rating",
   value = 0,
   hoverValue = null,
   disabled = false,
@@ -13,7 +14,7 @@ export default function SafetyRatingSelector({
   const activeValue = Number(hoverValue || value || 0);
   return (
     <fieldset className="mb-4">
-      <legend className="mb-2 text-sm font-semibold text-white">Safety rating <span className="font-normal text-white/55">Optional</span></legend>
+      <legend className="mb-2 text-sm font-semibold text-white">{label || "Safety rating (optional)"}</legend>
       <div className="mb-3 flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((step) => (
           <label
@@ -26,7 +27,7 @@ export default function SafetyRatingSelector({
           >
             <input
               type="radio"
-              name="venue-safety-rating"
+              name={name}
               value={step}
               checked={value === step}
               disabled={disabled}
@@ -38,11 +39,11 @@ export default function SafetyRatingSelector({
               fill={activeValue >= step ? "currentColor" : "none"}
               strokeWidth={2.1}
             />
-            <span className="sr-only">{step} {step === 1 ? "shield" : "shields"}</span>
+            <span className="sr-only">{step}/5</span>
           </label>
         ))}
         <span className="ml-2 rounded-full border border-cyan-200/20 bg-cyan-200/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-100">
-          {value > 0 ? `${value}/5` : "Not rated"}
+          {value > 0 ? `${value}/5` : "—"}
         </span>
       </div>
     </fieldset>

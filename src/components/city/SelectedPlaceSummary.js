@@ -1,12 +1,12 @@
 "use client";
 
 import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
-import { ArrowUpRight, MapPin } from "lucide-react";
+import { ArrowUpRight, MapPin, Star } from "lucide-react";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { polishVenueDescription } from "@/features/city/liveVibeFeature";
-import { getDisplayedSafetyShields, shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
-import { getSafetyToneClass } from "@/lib/placeSafetySignals";
+import { shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
+import SafetyShields from "@/components/city/SafetyShields";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import HotelKnowBeforeYouGo from "@/components/city/HotelKnowBeforeYouGo";
 import OfficialExternalLink from "@/components/ui/OfficialExternalLink";
@@ -20,14 +20,21 @@ export default function SelectedPlaceSummary({
   cityName,
   typeLabels,
   selectedPlaceSafetySignal,
+  reviews = [],
   showPlaceOnMap,
   onOpenReviews,
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   if (!selectedPlace) return null;
   const addressLabel = getEntityAddressLabel(selectedPlace);
   const bookingHref = getBookingAffiliateLink(selectedPlace);
   const reviewCount = Number(selectedPlace.reviewCount || 0);
+  const rating = Number(selectedPlace.avgRating ?? selectedPlace.avg_rating);
+  const scores = (reviews || []).map(review => Number(review.safety)).filter(value => value >= 1 && value <= 5);
+  const safetyCount = scores.length || Number(selectedPlaceSafetySignal?.safetyReviewCount || 0);
+  const safety = scores.length ? scores.reduce((total, value) => total + value, 0) / scores.length : Number(selectedPlaceSafetySignal?.safetyReviewAvg);
+  const hasSafety = safetyCount > 0 && safety > 0;
+  const formatScore = value => value.toLocaleString(locale, { maximumFractionDigits: 1 });
   const hasHours = Boolean(String(selectedPlace.hours || "").trim());
   const isHotel = String(selectedPlace.type || "").toLowerCase() === "hotel";
 
@@ -37,10 +44,18 @@ export default function SelectedPlaceSummary({
         <span>{selectedPlace.city || cityName}</span>
         <span className="text-[#d7c0ff]/66">·</span>
         <span className="text-[#d7c0ff]">{typeLabels[selectedPlace.type] || t("city.place", "Place")}</span>
-        <button type="button" onClick={onOpenReviews} className="ml-auto normal-case tracking-normal text-[#d7c0ff] hover:text-[#e4d6ff]">
-          {reviewCount > 0
-            ? `${selectedPlace.avgRating ? `${Number(selectedPlace.avgRating).toFixed(1)} · ` : ""}${reviewCount} ${t("city.reviews", "reviews")}`
-            : t("city.reviews", "Reviews")}
+        <button type="button" onClick={onOpenReviews} className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 rounded-lg text-sm normal-case tracking-normal hover:bg-white/5 focus-visible:outline-cyan-200 sm:ml-auto">
+          {reviewCount > 0 && rating > 0 && <span className="inline-flex items-center gap-1 text-[#e7c67f]">
+            <span className="sr-only">{t("city.reviews", "Reviews")} </span>
+            {[1, 2, 3, 4, 5].map(n => <Star key={n} aria-hidden="true" size={14} fill={n <= Math.round(rating) ? "currentColor" : "none"} />)}
+            {formatScore(rating)}/5
+          </span>}
+          {hasSafety && <span className="inline-flex items-center gap-1 text-cyan-200">
+            <span className="sr-only">{t("city.safety", "Safety")} </span>
+            <SafetyShields value={Math.round(safety)} activeClassName="text-cyan-200" inactiveClassName="text-white/45" />
+            {formatScore(safety)}/5
+          </span>}
+          <span className="text-[#d7c0ff] underline underline-offset-4">{t("city.reviews", "Reviews")} · {reviewCount}</span>
         </button>
       </div>
       <AmbassadorLink kind="venue" entity={selectedPlace} />
@@ -110,26 +125,11 @@ export default function SelectedPlaceSummary({
           className="mb-5 mt-8"
         />
       )}
-      <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/[0.08] pt-4">
-        <button type="button" onClick={onOpenReviews} className="text-sm font-semibold text-[#d7c0ff] transition hover:text-[#e4d6ff]">
-          {t("city.reviews", "Reviews")} · {selectedPlace.reviewCount || 0}
-        </button>
-        <div className="flex items-center gap-2 text-sm text-white/68">
-          <span className="text-[10px] uppercase tracking-[0.16em] text-white/44">{t("city.safety", "Safety")}</span>
-          {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 ? (
-            <p className={`mt-1 inline-flex items-center whitespace-nowrap rounded-full border px-2 py-0.5 text-sm ${getSafetyToneClass(selectedPlaceSafetySignal.tone)}`}>
-              {getDisplayedSafetyShields(selectedPlaceSafetySignal)}/5
-            </p>
-          ) : (
-            <span className="text-white/70">-</span>
-          )}
-        </div>
-      </div>
-      {selectedPlaceSafetySignal && Number(selectedPlaceSafetySignal.safetyReviewCount || 0) > 0 && (
+      {hasSafety && (
         <p className="mt-2 text-[11px] text-white/60">
           {t("city.safetyReviewsBasedOn", "Based on {count} member safety review{suffix}.")
-            .replace("{count}", selectedPlaceSafetySignal.safetyReviewCount)
-            .replace("{suffix}", selectedPlaceSafetySignal.safetyReviewCount === 1 ? "" : "s")}
+            .replace("{count}", safetyCount)
+            .replace("{suffix}", safetyCount === 1 ? "" : "s")}
         </p>
       )}
     </>

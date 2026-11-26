@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { venueReviews } from "@/lib/i18n/venueReviews";
 import { PenLine } from "lucide-react";
 import SelectedPlaceActions from "@/components/city/SelectedPlaceActions";
 import SelectedPlaceAdminControls from "@/components/city/SelectedPlaceAdminControls";
@@ -53,7 +54,9 @@ export default function SelectedPlacePanel({
   setComment,
   onSubmitReview,
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
+  const copy = venueReviews[locale];
+  const reviewPanel = useRef(null);
   const [reviewComposerOpen, setReviewComposerOpen] = useState(false);
 
   useEffect(() => {
@@ -106,33 +109,40 @@ export default function SelectedPlacePanel({
               cityName={cityName}
               typeLabels={typeLabels}
               selectedPlaceSafetySignal={selectedPlaceSafetySignal}
+              reviews={reviews}
               showPlaceOnMap={showPlaceOnMap}
-              onOpenReviews={() => onReviewCtaOpened?.()}
+              onOpenReviews={() => {
+                setReviewComposerOpen(true);
+                reviewPanel.current?.scrollIntoView({ block: "start" });
+                onReviewCtaOpened?.();
+              }}
       />
 
-      <section className="mt-7 border-t border-white/[0.08] pt-5" aria-label={t("city.reviews", "Reviews")}>
-        <div className="flex items-center justify-between gap-3">
+      <section ref={reviewPanel} className="mt-7 scroll-mt-20 rounded-3xl border border-[#bd9ee8]/55 bg-gradient-to-br from-[#513966] to-[#332a48] p-4 shadow-lg sm:p-6" aria-label={t("city.reviews", "Reviews")}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-base font-semibold tracking-[0.01em] text-[#f7f2f7]">{t("city.reviews", "Reviews")}</p>
-            <p className="mt-1 text-xs text-[#bdb3c2]">{reviewSummary}</p>
+            <p className="mt-1 text-xs text-[#bdb3c2]">{reviewCount ? reviewSummary : copy.invite}</p>
           </div>
           <button
             type="button"
             onClick={() => {
-              setReviewComposerOpen((current) => !current);
-              onReviewCtaOpened?.();
+              setReviewComposerOpen(!reviewComposerOpen);
+              if (!reviewComposerOpen) onReviewCtaOpened?.();
             }}
-            className="qa-action inline-flex items-center gap-2 rounded-full bg-[#e7c67f] px-4 py-2 text-xs font-semibold text-[#211b33] transition hover:bg-[#f2d997]"
+            aria-expanded={reviewComposerOpen}
+            className={`qa-action inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold ${reviewComposerOpen ? "text-white underline" : "bg-[#e7c67f] text-[#211b33] hover:bg-[#f2d997]"}` }
           >
             <PenLine className="h-3.5 w-3.5" aria-hidden="true" />
-            {reviewComposerOpen ? t("city.cancel", "Cancel") : t("city.writeReview", "Write a review")}
+            {reviewComposerOpen ? t("city.cancel", "Cancel") : reviewCount ? t("city.writeReview", "Write a review") : copy.first}
           </button>
         </div>
-        <SelectedPlaceReviewsList reviews={reviews} />
         {reviewComposerOpen ? (
           <div className="mt-6 border-t border-white/[0.08] pt-5">
-            <p className="mb-3 text-xs font-semibold tracking-[0.06em] text-[#f7f2f7]">{t("city.writeReview", "Write a review")}</p>
             <SelectedPlaceReviewComposer
+              key={selectedPlace.id}
+              place={selectedPlace}
+              copy={copy}
               isMember={isMember}
               canReviewSelectedPlace={canReviewSelectedPlace}
               isSubmittingReview={isSubmittingReview}
@@ -152,6 +162,7 @@ export default function SelectedPlacePanel({
             />
           </div>
         ) : null}
+        {reviews?.length > 0 && <SelectedPlaceReviewsList key={selectedPlace.id} reviews={reviews} />}
       </section>
 
       <div className="mt-7 border-t border-white/[0.08] pt-5">

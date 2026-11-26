@@ -1,9 +1,29 @@
 "use client";
 
 import SafetyShields from "@/components/city/SafetyShields";
+import { useLayoutEffect, useRef } from "react";
+import { useLocale } from "@/components/i18n/LocaleProvider";
 import { getMemberTitleMeta } from "@/lib/communityRanking";
 
+const VISIBLE_REVIEW_LIMIT = 4;
+
 export default function SelectedPlaceReviewsList({ reviews = [] }) {
+  const { t } = useLocale();
+  const list = useRef(null);
+  const scrollable = reviews.length > VISIBLE_REVIEW_LIMIT;
+  useLayoutEffect(() => {
+    if (!scrollable || !list.current) return;
+    const element = list.current;
+    const visibleRows = Array.from(element.children).slice(0, VISIBLE_REVIEW_LIMIT);
+    const resize = () => {
+      const height = visibleRows.reduce((sum, row) => sum + row.getBoundingClientRect().height, 0);
+      element.style.maxHeight = `${height}px`;
+    };
+    resize();
+    const observer = new ResizeObserver(resize);
+    visibleRows.forEach(row => observer.observe(row));
+    return () => { observer.disconnect(); element.style.maxHeight = ""; };
+  }, [scrollable, reviews]);
   if (reviews.length === 0) {
     return (
       <div className="border-b border-white/[0.08] py-8 text-left">
@@ -14,7 +34,12 @@ export default function SelectedPlaceReviewsList({ reviews = [] }) {
   }
 
   return (
-    <div className="divide-y divide-white/[0.08]">
+    <div ref={list} role={scrollable ? "region" : undefined} aria-label={scrollable ? t("city.reviews", "Reviews") : undefined} tabIndex={scrollable ? 0 : undefined}
+      onWheel={scrollable ? event => {
+        const el = event.currentTarget;
+        if (event.deltaY > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0) event.stopPropagation();
+      } : undefined}
+      className={`divide-y divide-white/15 ${scrollable ? "overflow-y-auto pr-2 [scrollbar-gutter:stable] focus-visible:outline-cyan-200" : ""}`}>
       {reviews.map((review) => {
         const titleMeta = getMemberTitleMeta(review.memberTitle);
         return (

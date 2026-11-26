@@ -4252,7 +4252,9 @@ export default function CityPageClient({ indexableContent = null }) {
       nextPlaceId: selectedPlace.id,
       nextEventId: null,
     });
-    redirectToJoinWithReturnTarget(redirectTarget);
+    const target = new URL(redirectTarget, window.location.origin);
+    target.searchParams.set("review", "1");
+    redirectToJoinWithReturnTarget(target.pathname + target.search);
   }, [buildSelectionUrl, redirectToJoinWithReturnTarget, selectedPlace]);
 
   const handleReviewCtaOpened = useCallback(() => {
