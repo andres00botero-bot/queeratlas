@@ -44,12 +44,26 @@ export const TOPIC_HUBS = {
     clusterKeys: ["events-tonight", "queer-events-this-week", "drag-shows-tonight"],
     cities: ["new_york", "madrid", "berlin", "mexico_city", "sao_paulo", "sydney", "bangkok", "tokyo"],
   },
+  hotels: {
+    key: "hotels",
+    title: "Gay Hotels & Queer Accommodation",
+    description: "Find gay hotels and LGBTQ-friendly places to stay by city. Compare neighbourhoods, check practical details and explore booking options for individual hotels.",
+    eyebrow: "Queer Atlas hotel guide",
+    decisionTitle: "Choose where to stay",
+    decisionSteps: [
+      "Start with a city to see which hotels are close to the neighbourhoods you want to explore.",
+      "Open a hotel guide for its address, local context and practical details before you go.",
+      "Follow the booking link where available to check prices and availability for your dates.",
+    ],
+    clusterKeys: ["queer-hotels"],
+    cities: ["berlin", "madrid", "barcelona", "london", "amsterdam", "paris", "lisbon", "copenhagen", "bangkok", "tokyo", "sydney", "toronto"],
+  },
   cafes: {
     key: "cafes",
     title: "Queer Cafes Hubs",
     description:
       "Daytime social discovery hubs for queer cafes and low-friction community starts across key cities.",
-    clusterKeys: ["queer-cafes", "queer-hotels", "queer-friendly-coworking"],
+    clusterKeys: ["queer-cafes", "queer-friendly-coworking"],
     cities: ["lisbon", "barcelona", "amsterdam", "paris", "london", "copenhagen", "berlin", "toronto"],
   },
   community: {

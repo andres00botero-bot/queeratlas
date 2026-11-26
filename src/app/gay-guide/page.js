@@ -226,7 +226,7 @@ export default async function GayGuidePage() {
           </div>
           <p className="mt-3 text-sm leading-7 text-white/66">
             For deeper comparison, open <Link href="/topics/community" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">community-focused nightlife hubs</Link> and{" "}
-            <Link href="/topics/cafes" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">queer cafe + hotel hubs</Link> before finalizing your city stack.
+            <Link href="/topics/hotels" className="text-white/90 underline decoration-white/40 underline-offset-4 hover:text-white">gay hotels and queer accommodation</Link> before finalizing your city stack.
           </p>
         </section>
 

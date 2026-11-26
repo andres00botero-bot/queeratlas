@@ -77,10 +77,10 @@ export const CITY_CLUSTER_TOPICS = {
     ],
   },
   "queer-hotels": {
-    title: "Queer-Friendly Hotels Guide",
+    title: "Gay Hotels & LGBTQ-Friendly Accommodation",
     intent: "daylife",
     summary:
-      "Stay-first planning for queer-friendly hotels with location fit, social access, and nightlife adjacency in mind.",
+      "Compare places to stay near queer neighbourhoods and nightlife. Open each hotel guide for its location, practical details and booking options.",
     keyphrases: [
       "queer friendly hotels",
       "gay friendly hotels",

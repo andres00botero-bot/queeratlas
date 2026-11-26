@@ -90,7 +90,7 @@ function buildVenueDiscoverLinks({ city, cityName, placeType }) {
     store: "queer-stores",
   };
   const primaryKey = byType[normalizedType] || "queer-bars";
-  const topicHub = ["cafe", "hotel", "store"].includes(normalizedType) ? "/topics/cafes" : "/topics/nightlife";
+  const topicHub = normalizedType === "hotel" ? "/topics/hotels" : ["cafe", "store"].includes(normalizedType) ? "/topics/cafes" : "/topics/nightlife";
 
   return [
     {
@@ -107,7 +107,7 @@ function buildVenueDiscoverLinks({ city, cityName, placeType }) {
     },
     {
       href: topicHub,
-      label: "Compare This Topic Across Cities",
+      label: normalizedType === "hotel" ? "Explore gay hotels and queer accommodation by city" : "Compare This Topic Across Cities",
     },
   ];
 }
