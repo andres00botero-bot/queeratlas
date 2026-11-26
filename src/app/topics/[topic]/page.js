@@ -11,6 +11,7 @@ import {
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl } from "@/lib/seo/localizedSeo";
 import JourneyDeck from "@/components/seo/JourneyDeck";
+import HotelDirectory from "@/components/seo/HotelDirectory";
 
 function toAbsoluteUrl(path = "", locale) {
   return `${QA_SITE_URL}${localePath(path, locale)}`;
@@ -41,7 +42,7 @@ export async function generateMetadata({ params }) {
   const cityClusterRoutes = await loadIndexableTopicHubRoutes(hub.key);
   const quality = evaluateTopicHubIndexability({ hub, routes: cityClusterRoutes });
   const isPortuguese = locale === "pt";
-  const title = isPortuguese ? `${hub.title} | Guia Queer Atlas 2026` : `${hub.title} 2026`;
+  const title = hub.key === "hotels" ? hub.title : isPortuguese ? `${hub.title} | Guia Queer Atlas 2026` : `${hub.title} 2026`;
   const description = isPortuguese ? `${hub.description} Compare percursos por cidade, contexto de segurança e sinais da comunidade num só guia temático.` : `${hub.description} Compare city-by-city discover routes, safety context, and social signal in one topical hub.`;
 
   return {
@@ -159,6 +160,12 @@ export default async function TopicHubPage({ params }) {
     ],
   };
 
+  if (hub.key === "hotels") return (
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd([itemListJsonLd, breadcrumbJsonLd]) }} />
+      <HotelDirectory routes={cityClusterRoutes.map(route => ({ ...route, href: localePath(route.href, locale) }))} />
+    </>
+  );
   const faqEntries = buildTopicHubFaqEntries({
     hub,
     cityCount: selectedCitiesCount,

@@ -26,6 +26,18 @@ export const loadIndexableTopicHubRoutes = cache(async (hubKey = "") => {
   if (!hub) return [];
 
   const inventory = await loadSeoEntityInventory();
+  if (hub.key === "hotels") {
+    const counts = new Map();
+    for (const venue of inventory.venues) {
+      if (String(venue.type).toLowerCase() !== "hotel") continue;
+      const city = normalizeCitySlug(venue.city);
+      counts.set(city, (counts.get(city) || 0) + 1);
+    }
+    return Array.from(counts, ([city, count]) => ({
+      city, count, label: humanizeCityKey(city), clusterKey: "queer-hotels",
+      routeKind: "discovery", href: `/${city}/discover/queer-hotels`,
+    })).sort((a, b) => a.label.localeCompare(b.label));
+  }
   const todayIso = new Date().toISOString().slice(0, 10);
   const clusterKeys = getHubClusterKeys(hub);
 
