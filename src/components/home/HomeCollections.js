@@ -34,6 +34,7 @@ export function HomeShortcuts({ locale = "en" }) {
           <a href={toLocalePath("/events", locale)}>{getMessage(locale, "fieldGuide.calendar")}</a>
 
           <a href={toLocalePath("/qari", locale)}>{getMessage(locale, "fieldGuide.risk")}</a>
+          <a href={toLocalePath("/topics/hotels", locale)}>{getMessage(locale, "fieldGuide.hotels")}</a>
         </nav>
   );
 }

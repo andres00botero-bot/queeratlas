@@ -1,7 +1,7 @@
 import { serializeJsonLd } from "@/lib/jsonLd";
 import Link from "next/link";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTopicHub, listTopicHubs } from "@/lib/seo/topicHubs";
 import { QA_ORGANIZATION_ID, QA_SITE_URL, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import {
@@ -111,7 +111,7 @@ function buildTopicHubFaqJsonLd({ faqEntries = [] }) {
   };
 }
 
-export default async function TopicHubPage({ params }) {
+export default async function TopicHubPage({ params, searchParams }) {
   const locale = normalizeLocale((await headers()).get("x-qa-locale"));
   const isPortuguese = locale === "pt";
   const resolved = await params;
@@ -123,6 +123,11 @@ export default async function TopicHubPage({ params }) {
   const canonical = buildTopicPath(hub.key);
   const cityClusterRoutes = await loadIndexableTopicHubRoutes(hub.key);
   const selectedCitiesCount = new Set(cityClusterRoutes.map((route) => route.city)).size;
+  if (hub.key === "hotels") {
+    const requestedCity = (await searchParams)?.city;
+    const selected = requestedCity && cityClusterRoutes.find(route => route.city === requestedCity);
+    if (selected) redirect(localePath(selected.href, locale));
+  }
 
   const itemListJsonLd = {
     "@context": "https://schema.org",

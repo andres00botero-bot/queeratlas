@@ -1309,6 +1309,7 @@ messages.de.community = {
 };
 
 messages.en.fieldGuide = {
+  hotels: "Hotel guides",
   "hero": "Find queer places, events and local travel advice by city.",
   "collections": "Atlas Collections",
   "intro": "Queer travel guides, selected by the editors.",
@@ -1327,6 +1328,7 @@ messages.en.fieldGuide = {
 };
 
 messages.es.fieldGuide = {
+  hotels: "Guías de hoteles",
   "hero": "Descubre lugares queer, eventos y consejos locales para cada ciudad.",
   "collections": "Colecciones del Atlas",
   "intro": "Guías de viaje queer seleccionadas por la redacción.",
@@ -1345,6 +1347,7 @@ messages.es.fieldGuide = {
 };
 
 messages.fr.fieldGuide = {
+  hotels: "Guides hôteliers",
   "hero": "Découvrez les lieux queer, les événements et les conseils de voyage pour chaque ville.",
   "collections": "Collections de l’Atlas",
   "intro": "Des guides de voyage queer sélectionnés par la rédaction.",
@@ -1363,6 +1366,7 @@ messages.fr.fieldGuide = {
 };
 
 messages.de.fieldGuide = {
+  hotels: "Hotelführer",
   "hero": "Entdecke queere Orte, Events und lokale Reisetipps für jede Stadt.",
   "collections": "Atlas-Kollektionen",
   "intro": "Queere Reiseführer, ausgewählt von der Redaktion.",
@@ -1381,6 +1385,7 @@ messages.de.fieldGuide = {
 };
 
 messages.pt.fieldGuide = {
+  hotels: "Guias de hotéis",
   "hero": "Descubra lugares queer, eventos e dicas de viagem locais em cada cidade.",
   "collections": "Coleções do Atlas",
   "intro": "Guias de viagem queer selecionados pela redação.",

@@ -1,33 +1,41 @@
-"use client";
+import { ArrowRight, ChevronDown, MapPin, BedDouble, CalendarDays } from "lucide-react";
 
-import Link from "next/link";
-import { useState } from "react";
+const steps = [
+  [MapPin, "Pick your neighbourhood", "Start with the part of town where you’ll spend your evenings. Check the walk or the last train back."],
+  [BedDouble, "Find your kind of stay", "Open a hotel guide for its address and local context. If step-free access or a guest policy matters to you, confirm it with the property."],
+  [CalendarDays, "Check your dates", "Follow the booking link where available. Compare the full price and cancellation deadline before you reserve."],
+];
 
 export default function HotelDirectory({ routes }) {
-  const [query, setQuery] = useState("");
-  const normalize = value => value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
-  const cities = routes.filter(route => normalize(route.label).includes(normalize(query)));
-
   return (
-    <main className="min-h-screen bg-[#121917] px-5 py-10 text-[#f8f4e9] sm:px-10">
-      <div className="mx-auto max-w-5xl">
-        <header className="border-b border-[#becbb8]/30 pb-8 sm:pb-12">
-          <p className="text-xs uppercase tracking-[.24em] text-[#b7d6bd]">Queer Atlas · Places to stay</p>
-          <h1 className="my-5 max-w-3xl font-serif text-5xl leading-[1.04] sm:text-7xl">Gay hotels &amp; queer accommodation</h1>
-          <p className="max-w-2xl leading-7 text-[#d5dcd2]">Where do you want to wake up? Choose a city to explore its hotels, get a feel for the neighbourhood and find a stay that fits your trip.</p>
+    <main className="min-h-screen bg-[radial-gradient(ellipse_at_80%_0%,#302043_0%,transparent_48%),linear-gradient(160deg,#131626,#090b13_65%)] px-5 py-12 text-white sm:px-8 sm:py-20">
+      <div className="mx-auto max-w-4xl">
+        <header className="max-w-3xl">
+          <h1 className="qa-display text-4xl font-semibold leading-[1.04] tracking-[-.045em] sm:text-6xl">Gay hotels <span className="text-cyan-100">&amp; queer accommodation</span></h1>
+          <p className="mt-5 max-w-xl text-base leading-7 text-slate-300">A quiet room near the scene or a social stay in the middle of it? Start with a city and explore the hotels around your plans.</p>
         </header>
-        <section className="py-8">
-          <label htmlFor="hotel-city" className="mb-3 block font-serif text-3xl">Choose your city</label>
-          <input id="hotel-city" type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search cities, e.g. Berlin" className="w-full rounded-lg bg-[#f8f4e9] px-5 py-4 text-lg text-[#17221b] placeholder:text-[#556159] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b7d6bd]" />
-          <p aria-live="polite" className="my-3 text-sm text-[#bdcbbc]">{cities.length ? `${cities.length} destinations` : "No matching cities. Try another name."}</p>
-          <ul className="grid max-h-[26rem] gap-x-6 overflow-y-auto overscroll-y-contain rounded-lg bg-[#202c25] p-3 sm:grid-cols-2 lg:grid-cols-3">
-            {cities.map(city => <li key={city.city}><Link prefetch={false} href={city.href} className="flex min-h-14 items-center justify-between gap-2 border-b border-white/15 px-2 py-3 hover:bg-white/10 focus-visible:outline-offset-[-3px]"><strong>{city.label}</strong><span className="text-sm text-[#cbdacb]">{city.count} {city.count === 1 ? "hotel" : "hotels"} →</span></Link></li>)}
-          </ul>
+        {routes.length > 0 ? <form method="get" className="my-8 max-w-2xl rounded-2xl border border-white/15 bg-white/[.045] p-5 sm:my-10 sm:p-6">
+          <label htmlFor="hotel-city" className="mb-2 block text-sm font-semibold text-cyan-100">Choose your city</label>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="relative flex-1">
+              <select id="hotel-city" name="city" required defaultValue="" className="h-12 w-full appearance-none rounded-xl border border-white/25 bg-[#181b2a] pl-4 pr-10 text-base text-white focus-visible:outline-2 focus-visible:outline-cyan-200">
+                <option disabled value="">Select a destination</option>
+                {routes.map(route => <option key={route.city} value={route.city}>{route.label} ({route.count})</option>)}
+              </select>
+              <ChevronDown aria-hidden="true" size={18} className="pointer-events-none absolute top-4 right-3 text-cyan-100" />
+            </div>
+            <button className="qa-action flex h-12 items-center justify-center gap-2 rounded-xl bg-[#e7c67f] px-6 font-semibold text-[#211b33] hover:bg-[#f2d997] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-cyan-200">View hotels <ArrowRight aria-hidden="true" size={17} /></button>
+          </div>
+        </form> : <p className="my-8">The city directory is currently unavailable. Please try again shortly.</p>}
+        <noscript><ul>{routes.map(route => <li key={route.city}><a href={route.href}>{route.label} hotels</a></li>)}</ul></noscript>
+        <section aria-label="How to choose a hotel" className="grid gap-6 border-t border-white/15 py-7 sm:grid-cols-3 sm:gap-8">
+          {steps.map(([Icon, heading, copy]) => <article key={heading}>
+            <Icon aria-hidden="true" size={20} strokeWidth={1.5} className="mb-3 text-cyan-200" />
+            <h2 className="qa-display text-lg font-semibold">{heading}</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">{copy}</p>
+          </article>)}
         </section>
-        <section className="grid gap-6 border-t border-white/20 py-8 sm:grid-cols-2">
-          <article><h2 className="font-serif text-2xl">What kind of welcome?</h2><p className="mt-3 leading-7 text-[#d5dcd2]">Looking for a queer-owned guesthouse, a social hotel or a quiet room near the scene? Read the individual hotel guide for its local context. If a men-only policy, accessible shower or guest policy matters for your stay, confirm it directly with the property before paying.</p></article>
-          <article><h2 className="font-serif text-2xl">Before you reserve</h2><p className="mt-3 leading-7 text-[#d5dcd2]">Check the journey back from the neighbourhood where you’ll spend your evenings. Then compare the total for your dates, including taxes and cancellation terms. Where a hotel guide includes a Booking.com partner link, Queer Atlas may earn a commission on a qualifying reservation.</p></article>
-        </section>
+        <p className="max-w-xl text-xs leading-5 text-slate-400">Queer Atlas may earn a commission when you book through a Booking.com partner link.</p>
       </div>
     </main>
   );
