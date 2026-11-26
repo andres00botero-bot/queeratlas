@@ -7,6 +7,7 @@ import {
   evaluateEventSeoQuality,
   evaluateServiceSeoQuality,
   evaluateVenueSeoQuality,
+  isPublishedHotel,
   excludeDuplicateEntityCopy,
 } from "@/lib/seo/entityIndexing";
 import { isUpcomingPublishedEvent, uniquePublishedEntities } from "@/lib/publicInventory";
@@ -94,7 +95,7 @@ async function buildInventory() {
     servicesResult.rows.filter((row) => inSupportedCity(row, supportedCityKeys)),
   );
 
-  const venues = excludeDuplicateEntityCopy(allVenues).filter(
+  const venues = [...allVenues.filter(isPublishedHotel), ...excludeDuplicateEntityCopy(allVenues.filter(row => !isPublishedHotel(row)))].filter(
     (row) => evaluateVenueSeoQuality(row).indexable,
   );
   const events = excludeDuplicateEntityCopy(allEvents).filter(

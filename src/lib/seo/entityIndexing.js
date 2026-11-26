@@ -115,7 +115,14 @@ function baseQuality(entity = {}, kind = "venue", minimumDescriptionLength = 90)
   return { indexable: reasons.length === 0, reasons };
 }
 
+export function isPublishedHotel(entity = {}) {
+  return cleanText(entity.type).toLowerCase() === "hotel" &&
+    Boolean(cleanText(entity.id) && cleanText(entity.name) && cleanText(entity.city)) &&
+    !isExplicitlyBlocked(entity) && !BLOCKED_QUALITY_STATUSES.has(cleanText(entity.status).toLowerCase());
+}
+
 export function evaluateVenueSeoQuality(entity = {}) {
+  if (isPublishedHotel(entity)) return { indexable: true, reasons: [] };
   const result = baseQuality(entity, "venue", 90);
   const hasLocation = cleanText(entity?.location).length >= 4;
   const hasCoordinates = Number.isFinite(Number(entity?.lat)) && Number.isFinite(Number(entity?.lng));

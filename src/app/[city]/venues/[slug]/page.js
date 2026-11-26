@@ -19,7 +19,7 @@ import {
 import { QA_ORGANIZATION_ID, QA_WEBSITE_ID } from "@/lib/seo/entityAuthority";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { localePath, localizedAlternates, localizedOpenGraphUrl, openGraphLocale } from "@/lib/seo/localizedSeo";
-import { evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
+import { isPublishedHotel, evaluateVenueSeoQuality } from "@/lib/seo/entityIndexing";
 import { getEntitySearchCopy } from "@/lib/seo/entitySearchCopy";
 import {
   schemaTypeForVenue,
@@ -226,10 +226,12 @@ export async function generateMetadata({ params }) {
   const canonicalPath = buildVenuePath(city, place);
   const searchCopy = getEntitySearchCopy({ kind: "venue", city, cityName, entity: place });
   const isFrench = locale === "fr";
-  const title = searchCopy?.title || (isFrench
+  const hotel = isPublishedHotel(place);
+  const hotelLocation = place.name.toLowerCase().includes(cityName.toLowerCase()) ? "" : ` · ${cityName}`;
+  const title = hotel ? `${place.name}${hotelLocation} | Queer Atlas Hotel Guide` : searchCopy?.title || (isFrench
     ? `${place.name} à ${cityName} | Guide des lieux Queer Atlas`
     : `${place.name} (${cityName}) | Queer Atlas Venue Guide`);
-  const description = isFrench
+  const description = hotel && !isFrench && String(place.id) === "84" ? "Explore Axel Hotel Berlin, an adults-only hotel in Schöneberg. Find its location, practical details for your stay and booking information." : isFrench
     ? `${place.name} à ${cityName} : horaires, ambiance, localisation et contexte queer pratique.`
     : searchCopy?.description ||
       String(place?.description || "").trim() ||
@@ -237,10 +239,10 @@ export async function generateMetadata({ params }) {
   const quality = evaluateVenueSeoQuality(place);
 
   return {
-    title: searchCopy ? { absolute: title } : title,
+    title: hotel || searchCopy ? { absolute: title } : title,
     description,
     alternates: localizedAlternates(canonicalPath, locale),
-    robots: !isFrench && quality.indexable && coreConfig.seoIndexable !== false
+    robots: hotel || (!isFrench && quality.indexable && coreConfig.seoIndexable !== false)
       ? { index: true, follow: true }
       : { index: false, follow: true },
     openGraph: {

@@ -225,7 +225,7 @@ export async function getVenueSitemapEntries() {
   ]);
   const indexableCities = new Set(registryCities.map((city) => city.key));
   // Detail pages inherit the same reviewed language set as robots and hreflang.
-  return canonicalEntries(withLanguageAlternates(venues.filter((venue) => indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
+  return canonicalEntries(withLanguageAlternates(venues.filter((venue) => venue.type === "hotel" || indexableCities.has(normalizeCitySlug(venue?.city))).map((venue) => entryWithDate({
     url: `${QA_SITE_URL}${buildVenuePath(venue.city, venue)}`,
     changeFrequency: "monthly",
     priority: 0.72,
