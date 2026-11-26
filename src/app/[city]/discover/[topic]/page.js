@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import CityPanelButton from "@/components/city/CityPanelButton";
 import { notFound } from "next/navigation";
 import EditorialDisclosure from "@/components/editorial/EditorialDisclosure";
+import { hotelGuide } from "@/lib/i18n/hotelGuide";
 import CityDiscoveryResults from "@/components/city/CityDiscoveryResults";
 import { loadSeoEntityInventory } from "@/lib/seo/entityInventory";
 import { buildVenuePath, normalizeCitySlug } from "@/lib/seo/entitySlug";
@@ -358,11 +359,12 @@ export async function generateMetadata({ params }) {
   const canonical = buildCanonicalPath(city, topic);
   const canonicalUrl = toAbsoluteUrl(localePath(canonical, locale));
   if (topic === "queer-hotels") {
+    const t = hotelGuide[locale];
     const { venues } = await loadSeoEntityInventory();
     const hasHotels = venues.some(row => normalizeCitySlug(row.city) === city && String(row.type).toLowerCase() === "hotel");
     return {
-      title: `Gay hotels & LGBTQ-friendly stays in ${cityName}`,
-      description: `Explore hotel guides for ${cityName}. Compare locations, practical details and booking options for your queer city break.`,
+      title: `${t.city.replace("{city}", cityName)} | ${t.heading} ${t.subtitle}`,
+      description: `${t.city.replace("{city}", cityName)}. ${t.details}`,
       alternates: localizedAlternates(canonical, locale),
       robots: { index: hasHotels && config.seoIndexable !== false, follow: true },
     };
@@ -421,13 +423,14 @@ export default async function CityClusterTopicPage({ params }) {
   const cityName = cityNameFromConfig(config, city);
   const relatedTopics = listLocalizedCityClusterTopics(locale).filter((entry) => entry.key !== topic).slice(0, 4);
   if (topic === "queer-hotels") {
+    const t = hotelGuide[locale];
     const inventory = await loadSeoEntityInventory();
     const hotels = inventory.venues.filter(row => normalizeCitySlug(row.city) === city && String(row.type).toLowerCase() === "hotel")
       .sort((a, b) => a.name.localeCompare(b.name));
     return <main className="min-h-screen bg-[#121917] px-5 py-10 text-[#f8f4e9]"><div className="mx-auto max-w-4xl">
-      <Link href={localePath("/topics/hotels", locale)} className="text-sm text-[#b7d6bd] underline underline-offset-4">← Choose another city</Link>
-      <h1 className="my-6 font-serif text-5xl">Hotels in {cityName}</h1>
-      <p className="mb-6 text-[#cbdacb]">{hotels.length ? "Open a hotel guide for its location, practical details and booking options." : "There are currently no published hotel guides for this city."}</p>
+      <Link href={localePath("/topics/hotels", locale)} className="text-sm text-[#b7d6bd] underline underline-offset-4">← {t.back}</Link>
+      <h1 className="my-6 font-serif text-5xl">{t.city.replace("{city}", cityName)}</h1>
+      <p className="mb-6 text-[#cbdacb]">{hotels.length ? t.details : t.empty}</p>
       <ul className="grid gap-3 sm:grid-cols-2">{hotels.map(hotel => <li key={hotel.id}><Link prefetch={false} href={localePath(buildVenuePath(city, hotel), locale)} className="block h-full rounded-lg border border-white/15 bg-[#202c25] p-5 hover:border-[#b7d6bd]"><strong>{hotel.name} →</strong>{hotel.location && <span className="mt-2 block text-sm text-[#cbdacb]">{hotel.location}</span>}</Link></li>)}</ul>
     </div></main>;
   }
