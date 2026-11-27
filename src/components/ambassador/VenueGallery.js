@@ -62,10 +62,10 @@ function Gallery({ venue, signedIn }) {
   }
 
   if (!gallery || (!gallery.canEdit && !gallery.photos.length)) return null;
-  return <section className="my-5">
-    <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-semibold text-white">{title}</h3>
-      {gallery.canEdit && <button type="button" aria-expanded={editing} className="min-h-11 text-sm text-cyan-200 underline" onClick={() => setEditing(!editing)}>{editing ? done : manage}</button>}
-    </div>
+  return <section aria-label={title} className="my-5">
+    {gallery.canEdit && <div className="flex justify-end">
+      <button type="button" aria-expanded={editing} className="min-h-11 text-sm text-cyan-200 underline" onClick={() => setEditing(!editing)}>{editing ? done : manage}</button>
+    </div>}
     {editing && <p className="my-2 text-sm text-white/75">{formats}</p>}
     <p role="status" className="text-sm text-cyan-100">{notice}</p>
     {error && <p role="alert" className="text-sm text-rose-200">{error}</p>}
