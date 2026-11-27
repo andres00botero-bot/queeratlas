@@ -5,6 +5,7 @@ markerColors.event = "#ff83cd";
 
 // Single-colour, 24-unit glyphs for the dark city map.
 const glyphs = {
+  sauna: "M6 11c3-3-2-4 1-8 M11 11c3-3-2-4 1-8 M16 11c3-3-2-4 1-8 M3 15h18 M5 16v5 M19 16v5",
   club: "M12 2v3 M12 5a8 8 0 1 0 0 16 8 8 0 1 0 0-16 M5 10h14 M5 16h14 M12 5c-5 5-5 11 0 16 5-5 5-11 0-16Z",
   bar: "M3 4h18l-9 9-9-9Z M12 13v7 M7 21h10",
   cruise_club: "M1 7q5-3 11 0 6-3 11 0-1 13-11 8Q2 20 1 7Z M4 9q4-1 6 2-4 3-6-2Z M20 9q-4-1-6 2 4 3 6-2Z",
