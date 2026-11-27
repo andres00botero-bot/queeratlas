@@ -1425,10 +1425,16 @@ body > div:first-child {
   z-index: 10;
 }
 .qa-category-marker svg { width: 19px; height: 19px; }
-.mapboxgl-marker.qa-category-marker:is(:hover, :focus-visible, [aria-pressed="true"]) {
+.mapboxgl-marker.qa-category-marker:is(:hover, :focus-visible, [data-hovered], [aria-pressed="true"]) {
   outline: 2px solid #fff8fc;
   outline-offset: 1px;
   z-index: 40;
+}
+.mapboxgl-marker.qa-category-marker[data-hovered] {
+  /* Reveal the exact position during list hover even inside an overview cluster. */
+  display: flex !important;
+  box-shadow: 0 0 12px 3px currentColor;
+  z-index: 41;
 }
 .qa-category-marker[aria-pressed="true"]::after {
   content: attr(data-label);

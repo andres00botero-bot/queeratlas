@@ -3021,6 +3021,7 @@ export default function CityPageClient({ indexableContent = null }) {
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
       if (el.classList.contains("qa-category-marker")) {
+        el.toggleAttribute("data-hovered", Boolean(hovered));
         el.setAttribute("aria-pressed", String(Boolean(selected)));
         return;
       }
@@ -3050,6 +3051,7 @@ export default function CityPageClient({ indexableContent = null }) {
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
       if (el.classList.contains("qa-category-marker")) {
+        el.toggleAttribute("data-hovered", Boolean(hovered));
         el.setAttribute("aria-pressed", String(Boolean(selected)));
         return;
       }
