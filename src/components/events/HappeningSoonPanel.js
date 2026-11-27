@@ -1,5 +1,7 @@
 "use client";
 
+import { eventListingHref } from "@/components/events/eventListingHref";
+
 import { useMemo, useState } from "react";
 import { ArrowRight, Bookmark, CalendarDays, Clock3, MapPin, Sparkles } from "lucide-react";
 import { useLocale } from "@/components/i18n/LocaleProvider";
@@ -76,7 +78,7 @@ export default function HappeningSoonPanel({
   onSaveEvent,
   isSaved,
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [scope, setScope] = useState(() => (["tonight", "weekend", "month"].includes(initialScope) ? initialScope : "month"));
   const [selectedCity, setSelectedCity] = useState("");
   const [visibleCount, setVisibleCount] = useState(5);
@@ -265,7 +267,7 @@ export default function HappeningSoonPanel({
                       <CalendarDays size={13} /> {formatEventDateLabel(featuredEvent)}
                     </p>
                     <h3 className="mt-3 max-w-[22ch] text-2xl font-semibold leading-tight tracking-[-0.025em] text-white sm:text-3xl">
-                      {featuredEvent.name}
+                      <a href={eventListingHref(featuredEvent, locale)}>{featuredEvent.name}</a>
                     </h3>
                     <VibeTagChips entity={featuredEvent} tone="fuchsia" className="mt-3" includeMixedFallback />
                     <p className="mt-4 line-clamp-3 max-w-2xl text-sm leading-6 text-white/64">
@@ -305,7 +307,7 @@ export default function HappeningSoonPanel({
                               {getTimingLabel(event, todayKey, weekendWindow.startKey, weekendWindow.endKey)}
                             </span>
                           </div>
-                          <h3 className="mt-1.5 text-base font-semibold leading-snug text-white">{event.name}</h3>
+                          <h3 className="mt-1.5 text-base font-semibold leading-snug text-white"><a href={eventListingHref(event, locale)}>{event.name}</a></h3>
                           <VibeTagChips entity={event} tone="amber" className="mt-2" includeMixedFallback />
                         </div>
                       </div>

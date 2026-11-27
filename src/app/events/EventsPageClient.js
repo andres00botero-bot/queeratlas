@@ -1,5 +1,7 @@
 ﻿"use client";
 
+import { eventListingHref } from "@/components/events/eventListingHref";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -1173,10 +1175,9 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                 />
               ) : (
                 searchResults.slice(0, searchVisibleLimit).map((event) => (
-                  <button
+                  <a
                     key={`search-event-${event.isGlobal ? "global" : "city"}-${event.id}`}
-                    type="button"
-                    onClick={() => openEvent(event)}
+                    href={eventListingHref(event, locale)}
                     className="group flex w-full items-start gap-3 rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-3.5 text-left transition hover:-translate-y-px hover:border-cyan-200/28 hover:bg-white/[0.055] sm:items-center sm:p-4"
                   >
                     <span className="min-w-[70px] shrink-0 rounded-xl border border-cyan-200/14 bg-cyan-200/[0.06] px-2.5 py-2 text-center text-[11px] font-medium leading-5 text-cyan-50/82">
@@ -1192,7 +1193,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                       </span>
                     </span>
                     <span className="hidden shrink-0 text-xs font-medium text-cyan-100/65 transition group-hover:translate-x-0.5 group-hover:text-cyan-50 sm:inline">{t("events.view", "View")} →</span>
-                  </button>
+                  </a>
                 ))
               )}
               {searchResults.length > searchVisibleLimit ? (
@@ -1393,16 +1394,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                           return (
                           <div
                             key={eventKey}
-                            role="button"
-                            tabIndex={0}
-                            onClick={() => openEvent(event)}
-                            onKeyDown={(keyEvent) => {
-                              if (keyEvent.key === "Enter" || keyEvent.key === " ") {
-                                keyEvent.preventDefault();
-                                openEvent(event);
-                              }
-                            }}
-                            className="group cursor-pointer rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-3 shadow-[0_8px_20px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-px hover:border-cyan-200/24 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 [content-visibility:auto] [contain-intrinsic-size:150px]"
+                            className="group relative rounded-[18px] border border-white/[0.09] bg-white/[0.035] p-3 shadow-[0_8px_20px_rgba(0,0,0,0.16)] transition duration-300 hover:-translate-y-px hover:border-cyan-200/24 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200/45 [content-visibility:auto] [contain-intrinsic-size:150px]"
                           >
                             <div className="flex items-start gap-3">
                               <div
@@ -1419,7 +1411,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                                 </span>
                               </div>
                               <div className="min-w-0 flex-1">
-                                <h4 className="text-base font-semibold leading-5 tracking-[-0.015em] text-white transition group-hover:text-cyan-50">{event.name}</h4>
+                                <h4 className="text-base font-semibold leading-5 tracking-[-0.015em] text-white transition group-hover:text-cyan-50"><a href={eventListingHref(event, locale)} className="after:absolute after:inset-0 after:rounded-[18px]">{event.name}</a></h4>
                                 <p className="mt-1 line-clamp-1 text-xs leading-5 text-white/50">{event.description || event.location || "Open for event details."}</p>
                               </div>
                             </div>
@@ -1427,7 +1419,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                             <div className="mt-2 flex flex-wrap items-center justify-end gap-2 border-t border-white/[0.06] pt-2">
                               <button
                                 onClick={(eventClick) => saveEventToFavorites(event, eventClick)}
-                                className={`rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
+                                className={`relative z-10 rounded-full border px-3 py-1.5 text-[11px] font-medium transition ${
                                   favoriteIdSet.has(`event-${String(event.id)}`)
                                     ? "cursor-default border-emerald-200/28 bg-emerald-200/12 text-emerald-100"
                                     : "border-emerald-200/20 bg-emerald-200/8 text-emerald-100/90 hover:border-emerald-200/34 hover:bg-emerald-200/14"
@@ -1596,7 +1588,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
                     }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-base font-semibold text-white">{event.name}</p>
+                      <p className="text-base font-semibold text-white"><a href={eventListingHref({ ...event, isGlobal: true }, locale)}>{event.name}</a></p>
                       <div className="flex items-center gap-2">
                         <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-3 py-1 text-xs text-cyan-100">
                           {formatEventDateLabel(event)}
