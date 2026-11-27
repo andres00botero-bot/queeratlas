@@ -2396,6 +2396,8 @@ export default function CityPageClient({ indexableContent = null }) {
         });
 
         mapRef.current.on("error", handleMapError);
+        mapRef.current.on("webglcontextlost", showUnavailable);
+        mapRef.current.on("webglcontextrestored", handleContextRestored);
         mapRef.current.on("dragstart", beginInteraction);
         mapRef.current.on("dragend", endInteraction);
         mapRef.current.on("zoomstart", beginInteraction);
@@ -2415,11 +2417,21 @@ export default function CityPageClient({ indexableContent = null }) {
       }
     })();
 
-    const handleMapError = () => {
-      queueMicrotask(() => {
-        setIsMapReady(false);
-        setMapError("Map had trouble loading. Venue and event lists are still fully available.");
-      });
+    let mapHasLoaded = false;
+    const showUnavailable = () => {
+      if (isCancelled) return;
+      setIsMapReady(false);
+      setMapError("Map had trouble loading. Venue and event lists are still fully available.");
+    };
+    const handleMapError = ({ error }) => {
+      // A failed tile, glyph or sprite doesn't make the entire map unusable.
+      const failedUrl = error?.url || "";
+      if (!mapHasLoaded && /\/styles\/v1\/mapbox\/dark-v11\/?(?:\?|$)/.test(failedUrl)) showUnavailable();
+    };
+    const handleContextRestored = () => {
+      if (isCancelled) return;
+      setMapError("");
+      setIsMapReady(mapHasLoaded);
     };
 
     const beginInteraction = () => {
@@ -2438,7 +2450,9 @@ export default function CityPageClient({ indexableContent = null }) {
       if (!map) return;
 
       map.resize();
-      queueMicrotask(() => setIsMapReady(true));
+      mapHasLoaded = true;
+      setIsMapReady(true);
+      setMapError("");
 
       // Force a stable camera/fog state to avoid fog opacity runtime crashes in Mapbox internals.
       try {
@@ -2484,6 +2498,8 @@ export default function CityPageClient({ indexableContent = null }) {
     return () => {
       isCancelled = true;
       mapRef.current?.off("error", handleMapError);
+      mapRef.current?.off("webglcontextlost", showUnavailable);
+      mapRef.current?.off("webglcontextrestored", handleContextRestored);
       mapRef.current?.off("dragstart", beginInteraction);
       mapRef.current?.off("dragend", endInteraction);
       mapRef.current?.off("zoomstart", beginInteraction);
