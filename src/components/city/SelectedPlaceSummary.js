@@ -1,5 +1,6 @@
 "use client";
 
+import VenueGallery from "@/components/ambassador/VenueGallery";
 import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import { ArrowUpRight, MapPin, Star } from "lucide-react";
 import VibeTagChips from "@/components/ui/VibeTagChips";
@@ -58,6 +59,7 @@ export default function SelectedPlaceSummary({
         </button>
       </div>
       <AmbassadorLink kind="venue" entity={selectedPlace} />
+      <VenueGallery venue={selectedPlace} />
       <VibeTagChips entity={selectedPlace} tone="cyan" className="mb-4" showLegacy includeTypeFallback includeMixedFallback />
       <div className="border-y border-white/[0.08] py-4">
         <div className="flex items-start gap-3">

@@ -1,5 +1,6 @@
 "use client";
 
+import VenueGallery from "@/components/ambassador/VenueGallery";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, CalendarDays, CheckCircle2, MapPin, PencilLine, Plus, Search } from "lucide-react";
@@ -71,6 +72,7 @@ function Inventory({ assignment, initialKind, initialId, onEditing }) {
       </div>}
     </div>
 
+    {isScoped && ownedVenue && !editor && <VenueGallery venue={ownedVenue} />}
     {failed ? <div role="alert" className="mt-6"><p>City content could not be loaded.</p><button className={secondary + " mt-3"} onClick={() => { setFailed(false); setAttempt(n => n+1); }}>Try again</button></div>
       : !records ? <p role="status" className="mt-6">Loading your content…</p>
       : editor ? editor.id && !edited ? <div role="alert" className="mt-6"><p>This entry is unavailable in this assignment.</p><button className={secondary + " mt-3"} onClick={close}>Back to content</button></div>
