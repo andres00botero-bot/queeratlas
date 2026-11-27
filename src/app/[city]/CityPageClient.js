@@ -2727,7 +2727,7 @@ export default function CityPageClient({ indexableContent = null }) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !isMapReady || queerAreas.length === 0) return undefined;
+    if (!map || !isMapReady || queerAreas.length === 0 || activeVenueFilterValues.length) return undefined;
 
     const sourceId = "qa-queer-pulse";
     const layerId = "qa-queer-pulse-heat";
@@ -2762,36 +2762,32 @@ export default function CityPageClient({ indexableContent = null }) {
         id: layerId,
         type: "heatmap",
         source: sourceId,
-        maxzoom: 15,
+        minzoom: 10,
+        maxzoom: 13,
         paint: {
           "heatmap-weight": ["coalesce", ["get", "weight"], 1],
-          "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 8, 0.55, 13, 1.25, 15, 1.55],
+          "heatmap-intensity": 0.7,
           "heatmap-color": [
             "interpolate", ["linear"], ["heatmap-density"],
-            0, "rgba(49, 190, 255, 0)",
-            0.18, "rgba(66, 211, 255, 0.36)",
-            0.42, "rgba(168, 104, 255, 0.56)",
-            0.62, "rgba(247, 81, 176, 0.72)",
-            0.8, "rgba(255, 183, 77, 0.84)",
-            1, "rgba(255, 88, 88, 0.9)",
+            0, "rgba(180, 154, 216, 0)",
+            0.4, "rgba(180, 154, 216, 0.35)",
+            1, "rgba(180, 154, 216, 1)",
           ],
-          "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 8, 26, 12, 44, 15, 60],
-          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 13, 0.82, 15, 0],
+          "heatmap-radius": 28,
+          "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 10.5, 0.25, 12, 0.25, 13, 0],
         },
       });
     };
 
-    if (map.isStyleLoaded()) setupPulse();
-    else map.once("load", setupPulse);
+    setupPulse();
 
     return () => {
       mounted = false;
-      map.off("load", setupPulse);
       if (mapRef.current !== map || !hasMapStyle(map)) return;
       if (map.getLayer(layerId)) map.removeLayer(layerId);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     };
-  }, [cityEvents, cityPlaces, cityServices, isMapReady, queerAreas.length]);
+  }, [activeVenueFilterValues, cityEvents, cityPlaces, cityServices, isMapReady, queerAreas.length]);
 
   useEffect(() => {
     const map = mapRef.current;
