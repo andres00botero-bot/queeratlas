@@ -1,4 +1,4 @@
-import { normalizeVenueIntelSourceUrls } from "@/lib/venueIntel";
+import { normalizeVenueIntel, normalizeVenueIntelSourceUrls, VENUE_INTEL_FIELDS } from "./venueIntel.js";
 
 const HOTEL_FACT_KEYS = [
   ["check_in_check_out", "checkInCheckOut"],
@@ -32,16 +32,23 @@ export function getHotelIntel(place = {}) {
   if (clean(place?.type).toLowerCase() !== "hotel") return null;
 
   const source = hotelIntelSource(place);
+  const legacy = place.venue_intel || {};
   const facts = HOTEL_FACT_KEYS.map(([snakeKey, camelKey]) => ({
     key: camelKey,
-    value: clean(source[snakeKey] ?? source[camelKey]),
+    value: clean(source[snakeKey] ?? source[camelKey]) || clean(legacy[snakeKey] ?? legacy[camelKey]),
   })).filter((item) => item.value);
 
   if (!facts.some((item) => item.key === "checkInCheckOut") && isArrivalDepartureText(place?.hours)) {
     facts.unshift({ key: "checkInCheckOut", value: clean(place.hours) });
   }
 
-  const sourceUrls = normalizeVenueIntelSourceUrls(source.source_urls ?? source.sourceUrls);
+  const venueIntel = normalizeVenueIntel(place);
+  for (const [, key] of VENUE_INTEL_FIELDS) {
+    const evidence = venueIntel.topicEvidence[key];
+    if (!venueIntel[key] || ["not_published", "source_unavailable"].includes(evidence?.status)) continue;
+    facts.push({ key, value: venueIntel[key], sourceUrl: evidence?.sourceUrls[0] });
+  }
+  const sourceUrls = normalizeVenueIntelSourceUrls(source.source_urls ?? source.sourceUrls ?? venueIntel.sourceUrls);
   const checkedAt = clean(source.updated_at ?? source.updatedAt ?? place.updated_at);
 
   return { facts, sourceUrls, checkedAt };

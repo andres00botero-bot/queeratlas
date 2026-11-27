@@ -442,9 +442,7 @@ export default async function CityVenueDetailPage({ params }) {
         ) : null}
 
         {String(place?.type || "").toLowerCase() === "hotel" ? (
-          <div className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6">
-            <HotelKnowBeforeYouGo place={place} t={t} />
-          </div>
+          <HotelKnowBeforeYouGo place={place} t={t} className="rounded-[20px] border border-white/12 bg-white/[0.03] p-4 sm:rounded-[24px] sm:p-6" />
         ) : (
           <VenuePracticalIntel place={place} />
         )}

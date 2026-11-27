@@ -27,9 +27,10 @@ export default function HotelKnowBeforeYouGo({ place, t, className = "" }) {
         {intel.facts.map((fact) => (
           <div key={fact.key} className="py-3.5">
             <dt className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#d7c0ff]">
-              {t(`city.${LABELS[fact.key]}`, fact.key)}
+              {t(`city.${LABELS[fact.key] || fact.key}`, fact.key)}
             </dt>
             <dd className="mt-1 text-left text-sm leading-6 text-white/82">{fact.value}</dd>
+            {fact.sourceUrl && <dd><a className="text-xs text-[#d7c0ff] underline" href={fact.sourceUrl} target="_blank" rel="noopener noreferrer">{t("city.hotelSource", "Source")}</a></dd>}
           </div>
         ))}
       </dl>
