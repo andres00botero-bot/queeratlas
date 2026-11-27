@@ -43,6 +43,7 @@ import {
 import { usePlaces } from "@/lib/usePlaces";
 import { useMapboxStylesheet } from "@/lib/useMapboxStylesheet";
 import { evaluateMapInitReadiness, shouldTriggerMapFallback } from "@/lib/mapInitGuard";
+import { categoryMapMarker } from "@/features/city/categoryMapMarker";
 import { loadMapboxGl } from "@/lib/mapboxGlLoader";
 import { fetchServicesQuery } from "@/lib/servicesDataApi";
 import { supabase } from "@/lib/supabase";
@@ -2601,7 +2602,6 @@ export default function CityPageClient({ indexableContent = null }) {
       element.setAttribute("aria-label", label);
       return element;
     };
-    const EVENT_MARKER_COLOR = "#ff4ec4";
 
     visibleMapPlaces.forEach((place) => {
       if (!hasMapCoordinates(place)) return;
@@ -2612,7 +2612,7 @@ export default function CityPageClient({ indexableContent = null }) {
         : typeConfig?.color || "#9ca3af";
       const marker = useNeonMarkers
         ? new mapboxgl.Marker({
-            element: createNeonPinElement(neonColor),
+            element: categoryMapMarker(place.type, place.name) ?? createNeonPinElement(neonColor),
             anchor: "bottom",
           })
         : new mapboxgl.Marker({ color: neonColor });
@@ -2646,20 +2646,7 @@ export default function CityPageClient({ indexableContent = null }) {
 
     (isVenueCategoryFiltering ? [] : cityEvents).forEach((event) => {
       if (!hasMapCoordinates(event)) return;
-      const eventNeonColor = useNeonMarkers
-        ? EVENT_MARKER_COLOR
-        : "#8b5cf6";
-
-      const element = useNeonMarkers
-        ? createNeonPinElement(eventNeonColor)
-        : document.createElement("div");
-      if (!useNeonMarkers) {
-        element.style.width = "16px";
-        element.style.height = "16px";
-        element.style.background = "#8b5cf6";
-        element.style.borderRadius = "4px";
-        element.style.border = "2px solid white";
-      }
+      const element = categoryMapMarker("event", event.name);
 
       const marker = new mapboxgl.Marker({ element, anchor: "bottom" })
         .setLngLat([event.lng, event.lat])
@@ -2736,7 +2723,7 @@ export default function CityPageClient({ indexableContent = null }) {
       markersRef.current.push(marker);
       serviceMarkersRef.current.set(String(service.id), marker);
     });
-  }, [activeVenueFilterValues, city, cityEvents, cityPlaces, cityServices, openEvent, openPlace, openService]);
+  }, [activeVenueFilterValues, city, cityEvents, cityPlaces, cityServices, isMapReady, openEvent, openPlace, openService]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -2893,8 +2880,7 @@ export default function CityPageClient({ indexableContent = null }) {
     const clusterLayerId = "qa-city-cluster-bubbles";
     const clusterCountLayerId = "qa-city-cluster-count";
     const pointLayerId = "qa-city-cluster-points";
-    const clusterZoomThreshold = QUEER_AREA_MARKER_ZOOM;
-    const entitiesByKey = new Map();
+    const clusterZoomThreshold = 10;
     const features = [];
     const isVenueCategoryFiltering = activeVenueFilterValues.length > 0;
     const visibleMapPlaces = isVenueCategoryFiltering
@@ -2907,7 +2893,6 @@ export default function CityPageClient({ indexableContent = null }) {
       const lng = Number(entity.lng);
       const id = String(entity?.id || "");
       if (!id) return;
-      entitiesByKey.set(`${kind}:${id}`, entity);
       features.push({
         type: "Feature",
         geometry: { type: "Point", coordinates: [lng, lat] },
@@ -2925,20 +2910,14 @@ export default function CityPageClient({ indexableContent = null }) {
     let mounted = true;
 
     const syncDomMarkerVisibility = () => {
-      markersRef.current.forEach((marker) => {
-        marker.getElement().style.display = "flex";
-      });
-    };
-
-    const openClusterPoint = (event) => {
-      const feature = event?.features?.[0];
-      const kind = String(feature?.properties?.kind || "");
-      const id = String(feature?.properties?.id || "");
-      const entity = entitiesByKey.get(`${kind}:${id}`);
-      if (!entity) return;
-      if (kind === "venue") openPlace(entity, { origin: "map" });
-      if (kind === "event") openEvent(entity, { origin: "map" });
-      if (kind === "service") openService(entity, { origin: "map" });
+      const overview = map.getZoom() < clusterZoomThreshold && map.getLayer(pointLayerId);
+      const singles = overview ? new Set(map.queryRenderedFeatures({ layers: [pointLayerId] })
+        .map(({ properties }) => properties.kind + ":" + properties.id)) : null;
+      for (const [kind, markers] of [["venue", placeMarkersRef], ["event", eventMarkersRef], ["service", serviceMarkersRef]]) {
+        markers.current.forEach((marker, id) => {
+          marker.getElement().style.display = !singles || singles.has(kind + ":" + id) ? "flex" : "none";
+        });
+      }
     };
 
     const expandCluster = (event) => {
@@ -2981,8 +2960,8 @@ export default function CityPageClient({ indexableContent = null }) {
           maxzoom: clusterZoomThreshold,
           paint: {
             "circle-color": "rgba(29,23,35,0.94)",
-            "circle-stroke-color": "#f5a9c6",
-            "circle-stroke-width": 2,
+            "circle-stroke-color": "#a49ba9",
+            "circle-stroke-width": 1,
             "circle-radius": ["step", ["get", "point_count"], 17, 10, 21, 30, 25],
           },
         });
@@ -3001,39 +2980,33 @@ export default function CityPageClient({ indexableContent = null }) {
           source: sourceId,
           filter: ["!", ["has", "point_count"]],
           maxzoom: clusterZoomThreshold,
-          paint: {
-            "circle-color": ["match", ["get", "kind"], "event", "#b7a0f7", "service", "#88d9d4", "#f5a9c6"],
-            "circle-radius": 6,
-            "circle-stroke-color": "rgba(255,248,252,0.88)",
-            "circle-stroke-width": 1.5,
-          },
+          // Invisible hit geometry identifies the individual DOM symbols at this zoom.
+          paint: { "circle-radius": 8, "circle-opacity": 0 },
         });
         map.on("click", clusterLayerId, expandCluster);
-        map.on("click", pointLayerId, openClusterPoint);
         map.on("mouseenter", clusterLayerId, setPointerCursor);
         map.on("mouseleave", clusterLayerId, clearPointerCursor);
-        map.on("mouseenter", pointLayerId, setPointerCursor);
-        map.on("mouseleave", pointLayerId, clearPointerCursor);
       }
       syncDomMarkerVisibility();
     };
 
     if (map.isStyleLoaded()) setupClusters();
     else map.once("load", setupClusters);
-    map.on("zoom", syncDomMarkerVisibility);
+    map.on("zoomend", syncDomMarkerVisibility);
+    map.on("moveend", syncDomMarkerVisibility);
+    map.on("idle", syncDomMarkerVisibility);
 
     return () => {
       mounted = false;
       map.off("load", setupClusters);
-      map.off("zoom", syncDomMarkerVisibility);
+      map.off("zoomend", syncDomMarkerVisibility);
+      map.off("moveend", syncDomMarkerVisibility);
+      map.off("idle", syncDomMarkerVisibility);
       if (mapRef.current !== map) return;
       if (!hasMapStyle(map)) return;
       if (map.getLayer(clusterLayerId)) map.off("click", clusterLayerId, expandCluster);
-      if (map.getLayer(pointLayerId)) map.off("click", pointLayerId, openClusterPoint);
       if (map.getLayer(clusterLayerId)) map.off("mouseenter", clusterLayerId, setPointerCursor);
       if (map.getLayer(clusterLayerId)) map.off("mouseleave", clusterLayerId, clearPointerCursor);
-      if (map.getLayer(pointLayerId)) map.off("mouseenter", pointLayerId, setPointerCursor);
-      if (map.getLayer(pointLayerId)) map.off("mouseleave", pointLayerId, clearPointerCursor);
       [clusterCountLayerId, pointLayerId, clusterLayerId].forEach((layerId) => {
         if (map.getLayer(layerId)) map.removeLayer(layerId);
       });
@@ -3051,6 +3024,10 @@ export default function CityPageClient({ indexableContent = null }) {
       const selected = selectedPlace && String(id) === String(selectedPlace.id);
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
+      if (el.classList.contains("qa-category-marker")) {
+        el.setAttribute("aria-pressed", String(Boolean(selected)));
+        return;
+      }
       const neonPin = el.querySelector(".qa-neon-pin");
       el.style.transition = "filter 180ms ease, opacity 180ms ease";
       if (useNeonMarkers) {
@@ -3076,6 +3053,10 @@ export default function CityPageClient({ indexableContent = null }) {
       const selected = selectedEvent && String(id) === String(selectedEvent.id);
       const active = Boolean(hovered || selected);
       const el = marker.getElement();
+      if (el.classList.contains("qa-category-marker")) {
+        el.setAttribute("aria-pressed", String(Boolean(selected)));
+        return;
+      }
       const neonPin = el.querySelector(".qa-neon-pin");
       el.style.transition = "filter 180ms ease, opacity 180ms ease";
       if (useNeonMarkers) {
@@ -3125,6 +3106,14 @@ export default function CityPageClient({ indexableContent = null }) {
     hoveredPlaceId,
     hoveredServiceId,
     isMapInteracting,
+    isMapReady,
+    activeVenueFilterValues,
+    cityEvents,
+    cityPlaces,
+    cityServices,
+    openEvent,
+    openPlace,
+    openService,
     selectedEvent,
     selectedPlace,
     selectedService,

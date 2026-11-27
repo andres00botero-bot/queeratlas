@@ -1411,3 +1411,38 @@ body > div:first-child {
   width: 0;
   height: 0;
 }
+.mapboxgl-marker.qa-category-marker {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #17151e;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px #090810aa;
+  cursor: pointer;
+  z-index: 10;
+}
+.qa-category-marker svg { width: 19px; height: 19px; }
+.mapboxgl-marker.qa-category-marker:is(:hover, :focus-visible, [aria-pressed="true"]) {
+  outline: 2px solid #fff8fc;
+  outline-offset: 1px;
+  z-index: 40;
+}
+.qa-category-marker[aria-pressed="true"]::after {
+  content: attr(data-label);
+  position: absolute;
+  left: calc(100% + 4px);
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 3px 8px;
+  border: 1px solid #fff8fc;
+  border-radius: 999px;
+  background: #17151e;
+  color: #fff8fc;
+  font: 600 12px/1.35 system-ui, sans-serif;
+  pointer-events: none;
+}
