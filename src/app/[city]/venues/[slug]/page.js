@@ -1,3 +1,4 @@
+import LegacyVibe from "@/components/ui/LegacyVibe";
 import { serializeJsonLd } from "@/lib/jsonLd";
 import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
@@ -363,6 +364,7 @@ export default async function CityVenueDetailPage({ params }) {
           <p className="mt-2 hidden text-sm text-white/70 sm:block">
             {searchCopy?.description || `${cityName} venue intelligence with route context, hours, and trusted local signal.`}
           </p>
+          <LegacyVibe value={place.vibe} />
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/65">
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">
               Type: {String(place?.type || "place")}

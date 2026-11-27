@@ -5,7 +5,6 @@ import { ArrowUpRight, MapPin, Star } from "lucide-react";
 import VibeTagChips from "@/components/ui/VibeTagChips";
 import { getEntityAddressLabel, normalizeExternalUrl } from "@/features/city/adminDrawerFeature";
 import { polishVenueDescription } from "@/features/city/liveVibeFeature";
-import { shouldShowLegacyVibe } from "@/features/city/placeSafetyUi";
 import SafetyShields from "@/components/city/SafetyShields";
 import VenuePracticalIntel from "@/components/city/VenuePracticalIntel";
 import HotelKnowBeforeYouGo from "@/components/city/HotelKnowBeforeYouGo";
@@ -59,12 +58,7 @@ export default function SelectedPlaceSummary({
         </button>
       </div>
       <AmbassadorLink kind="venue" entity={selectedPlace} />
-      <VibeTagChips entity={selectedPlace} tone="cyan" className="mb-4" includeTypeFallback includeMixedFallback />
-      {shouldShowLegacyVibe(selectedPlace) && (
-        <p className="mb-2 text-[11px] uppercase tracking-[0.14em] text-cyan-100/72">
-          {t("city.legacyVibe", "Legacy vibe:")} {String(selectedPlace.vibe || "").trim()}
-        </p>
-      )}
+      <VibeTagChips entity={selectedPlace} tone="cyan" className="mb-4" showLegacy includeTypeFallback includeMixedFallback />
       <div className="border-y border-white/[0.08] py-4">
         <div className="flex items-start gap-3">
           <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#d7c0ff]" aria-hidden="true" />

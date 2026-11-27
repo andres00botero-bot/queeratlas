@@ -1,5 +1,6 @@
 "use client";
 
+import LegacyVibe from "@/components/ui/LegacyVibe";
 import { resolveVibeTagLabelsForEntity } from "@/lib/vibeDisplay";
 
 const TONE_STYLE = {
@@ -20,6 +21,7 @@ export default function VibeTagChips({
   tone = "neutral",
   className = "",
   max = 3,
+  showLegacy = false,
   includeTypeFallback = false,
   includeMixedFallback = false,
 }) {
@@ -29,9 +31,10 @@ export default function VibeTagChips({
     includeMixedFallback,
   });
 
-  if (labels.length === 0) return null;
+  if (labels.length === 0) return showLegacy ? <LegacyVibe value={entity.vibe} /> : null;
 
   return (
+    <>
     <div className={`flex flex-wrap gap-1.5 ${className}`.trim()}>
       {labels.map((label) => (
         <span
@@ -42,5 +45,7 @@ export default function VibeTagChips({
         </span>
       ))}
     </div>
+    {showLegacy && <LegacyVibe value={entity.vibe} displayedTags={labels} />}
+    </>
   );
 }

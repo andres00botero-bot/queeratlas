@@ -1,3 +1,4 @@
+import LegacyVibe from "@/components/ui/LegacyVibe";
 import { serializeJsonLd } from "@/lib/jsonLd";
 import AmbassadorLink from "@/components/ambassador/AmbassadorLink";
 import Link from "next/link";
@@ -360,6 +361,7 @@ export default async function CityEventDetailPage({ params }) {
             <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             {cityName}
           </Link>
+          <LegacyVibe value={event.vibe} displayedTags={vibeTags} />
           <CityPanelButton city={city} entityKind="event" entityId={String(event.id)} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-fuchsia-200/24 bg-fuchsia-200/10 px-3 text-xs font-semibold text-fuchsia-50">
             <MapPin className="h-4 w-4" aria-hidden="true" />
             City panel
@@ -388,9 +390,7 @@ export default async function CityEventDetailPage({ params }) {
             <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">
               End: {normalizedEvent.endDate || normalizedEvent.startDate || "TBA"}
             </span>
-            <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1">
-              Vibe: {String(event?.vibe || "community event")}
-            </span>
+
           </div>
           <CityPanelButton
             city={city}

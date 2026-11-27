@@ -34,7 +34,7 @@ export default function SelectedEventSummary({
       </div>
       <h2 className="mb-2 text-2xl font-bold tracking-[-0.02em]">{selectedEvent.name}</h2>
       <AmbassadorLink kind="event" entity={selectedEvent} />
-      <VibeTagChips entity={selectedEvent} tone="amber" className="mb-2" includeMixedFallback />
+      <VibeTagChips entity={selectedEvent} tone="amber" className="mb-2" showLegacy includeMixedFallback />
       <p className="mb-2 text-xs uppercase tracking-[0.14em] text-white/68">
         Address: {getEntityAddressLabel(selectedEvent)}
       </p>
