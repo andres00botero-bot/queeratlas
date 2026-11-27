@@ -1425,6 +1425,20 @@ body > div:first-child {
   z-index: 10;
 }
 .qa-category-marker svg { width: 19px; height: 19px; }
+@media (max-width: 640px) {
+  .mapboxgl-marker.qa-category-marker {
+    width: 24px;
+    height: 24px;
+    min-height: 0;
+  }
+  .qa-category-marker svg { width: 16px; height: 16px; }
+  .qa-category-marker::before {
+    content: "";
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+  }
+}
 .mapboxgl-marker.qa-category-marker:is(:hover, :focus-visible, [data-hovered], [aria-pressed="true"]) {
   outline: 2px solid #fff8fc;
   outline-offset: 1px;
