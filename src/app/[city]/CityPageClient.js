@@ -3508,7 +3508,7 @@ export default function CityPageClient({ indexableContent = null }) {
         location: eventAddress,
         ...buildVibeDualWriteFields({
           vibe: eventVibe,
-          vibeTags: normalizeVibeTags(eventVibeTags, { max: 3 }),
+          vibeTags: normalizeVibeTags(eventVibeTags),
         }),
         description: eventDescription,
         link: eventLink,
@@ -3609,7 +3609,7 @@ export default function CityPageClient({ indexableContent = null }) {
           if (!missingVibeTags) {
             legacyPayload.vibe_tags = buildVibeDualWriteFields({
               vibe: eventVibe,
-              vibeTags: normalizeVibeTags(eventVibeTags, { max: 3 }),
+              vibeTags: normalizeVibeTags(eventVibeTags),
             }).vibe_tags;
           }
           insertResult = await supabase.from("events").insert([legacyPayload]).select("*").single();
@@ -4393,7 +4393,7 @@ export default function CityPageClient({ indexableContent = null }) {
         ...buildPlaceVibeDualWriteFields({
           type: placeAdminDraft.type,
           vibe: placeAdminDraft.vibe,
-          vibeTags: normalizePlaceVibeTags(placeAdminDraft.vibe_tags, { max: 3 }),
+          vibeTags: normalizePlaceVibeTags(placeAdminDraft.vibe_tags),
         }),
         legacy_vibe_user_set: Boolean(String(placeAdminDraft.vibe || "").trim()),
         location: locationValue || null,
@@ -4681,7 +4681,7 @@ export default function CityPageClient({ indexableContent = null }) {
         lng: Number.isFinite(nextLng) ? nextLng : null,
         ...buildVibeDualWriteFields({
           vibe: eventAdminDraft.vibe,
-          vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+          vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags),
         }),
         description: eventAdminDraft.description.trim(),
         link: eventAdminDraft.link.trim() || null,
@@ -4751,7 +4751,7 @@ export default function CityPageClient({ indexableContent = null }) {
             if (!missingVibeTags) {
               legacyPayload.vibe_tags = buildVibeDualWriteFields({
                 vibe: eventAdminDraft.vibe,
-                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags),
               }).vibe_tags;
             }
             updateResult = await supabase
@@ -4832,7 +4832,7 @@ export default function CityPageClient({ indexableContent = null }) {
             if (!missingVibeTags) {
               legacyInsertPayload.vibe_tags = buildVibeDualWriteFields({
                 vibe: eventAdminDraft.vibe,
-                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags, { max: 3 }),
+                vibeTags: normalizeVibeTags(eventAdminDraft.vibe_tags),
               }).vibe_tags;
             }
             insertResult = await supabase

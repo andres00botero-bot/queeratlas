@@ -66,7 +66,7 @@ export default function SelectedEventAdminControls({
             onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
             tone="amber"
             title="Event vibe tags"
-            hint="Choose up to 3 tags."
+            hint="Choose up to 4 tags."
           />
           <input
             value={draft.vibe}

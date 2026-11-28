@@ -1,6 +1,8 @@
-const DEFAULT_MAX_VIBE_TAGS = 3;
+export const DEFAULT_MAX_VIBE_TAGS = 4;
 
 const STANDARD_VIBE_TAG_DEFS = [
+  { key: "queer_friendly", label: "Queer friendly", description: "Welcomes LGBTQ+ guests." },
+  { key: "sapphic", label: "Sapphic", description: "Centres sapphic people and community." },
   { key: "techno", label: "Techno", description: "Techno-forward dance energy." },
   { key: "pop", label: "Pop", description: "Pop-led crowd and music profile." },
   { key: "mixed", label: "Mixed", description: "Balanced multi-style profile." },
@@ -32,6 +34,7 @@ const STANDARD_VIBE_TAG_SET = new Set(STANDARD_VIBE_TAGS.map((item) => item.key)
 const STANDARD_VIBE_LABEL_BY_KEY = new Map(STANDARD_VIBE_TAGS.map((item) => [item.key, item.label]));
 
 const VIBE_ALIAS_ENTRIES = [
+  ["queer friendly", "queer_friendly"],
   ["techno", "techno"],
   ["electro", "electronic"],
   ["electronic", "electronic"],

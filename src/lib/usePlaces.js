@@ -302,8 +302,7 @@ export function usePlaces(city, { enabled = true } = {}) {
           normalizeVibeTags(
             Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
               ? row.vibe_tags
-              : inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
-            { max: 3 }
+              : inferVibeTagsFromLegacyVibe(String(row?.vibe || ""))
           ),
         ]),
     );
@@ -315,8 +314,7 @@ export function usePlaces(city, { enabled = true } = {}) {
           normalizeVibeTags(
             Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
               ? row.vibe_tags
-              : inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
-            { max: 3 }
+              : inferVibeTagsFromLegacyVibe(String(row?.vibe || ""))
           ),
         ]),
     );
@@ -459,8 +457,7 @@ export function usePlaces(city, { enabled = true } = {}) {
         vibe_tags: normalizeVibeTags(
           Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
             ? row.vibe_tags
-            : vibeTagsById || vibeTagsByCityName || inferVibeTagsFromLegacyVibe(String(row?.vibe || "")),
-          { max: 3 }
+            : vibeTagsById || vibeTagsByCityName || inferVibeTagsFromLegacyVibe(String(row?.vibe || ""))
         ),
         legacy_vibe_user_set: Boolean(
           row?.legacy_vibe_user_set ?? legacyVibeUserSetById ?? legacyVibeUserSetByCityName ?? false

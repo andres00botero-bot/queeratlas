@@ -70,7 +70,7 @@ export default function SelectedPlaceAdminControls({
               excludeTags={["service", "store"]}
               tone="amber"
               title="Venue vibe tags"
-              hint="Choose up to 3 tags."
+              hint="Choose up to 4 tags."
             />
           )}
           <input

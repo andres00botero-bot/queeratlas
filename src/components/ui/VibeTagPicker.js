@@ -1,4 +1,4 @@
-import { STANDARD_VIBE_TAGS, normalizeVibeTags } from "@/lib/vibeTaxonomy";
+import { DEFAULT_MAX_VIBE_TAGS, STANDARD_VIBE_TAGS, normalizeVibeTags } from "@/lib/vibeTaxonomy";
 
 const TONE_STYLES = {
   emerald: {
@@ -46,8 +46,8 @@ export default function VibeTagPicker({
   value = [],
   onChange,
   title = "Standard vibes",
-  hint = "Choose up to 3 tags.",
-  max = 3,
+  hint = "Choose up to 4 tags.",
+  max = DEFAULT_MAX_VIBE_TAGS,
   excludeTags = ["service", "store"],
   tone = "cyan",
   className = "",

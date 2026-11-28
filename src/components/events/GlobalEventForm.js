@@ -82,7 +82,7 @@ export default function GlobalEventForm({
           onChange={(nextTags) => setGlobalForm((current) => ({ ...current, vibe_tags: nextTags }))}
           tone="cyan"
           title="Event vibe tags"
-          hint="Pick up to 3 tags. This keeps global events searchable."
+          hint="Pick up to 4 tags. This keeps global events searchable."
         />
       </div>
       <input

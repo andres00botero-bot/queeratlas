@@ -24,8 +24,7 @@ export function buildGlobalFormFromEvent(event = {}) {
   const vibeTags = normalizeVibeTags(
     Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
       ? event.vibe_tags
-      : inferVibeTagsFromLegacyVibe(vibeLabel),
-    { max: 3 }
+      : inferVibeTagsFromLegacyVibe(vibeLabel)
   );
   return {
     name: String(event?.name || ""),

@@ -82,6 +82,9 @@ try {
   await db.exec(migration);
   await db.exec(migration);
 
+  await db.exec("create table global_events(vibe_tags text[])");
+  await db.exec(await readFile(new URL("../supabase/venue-event-vibe-tags-v2.sql", import.meta.url), "utf8"));
+
   await signIn(admin);
   const copenhagen = await grant(cityEditor, "city", "copenhagen");
   const sofia = await grant(venueEditor, "venue", "sofia", 2);
@@ -132,8 +135,8 @@ try {
   assert.equal((await db.query("update events set name='direct' where id=1 returning id")).rows.length, 0);
   assert.equal((await db.query("delete from events where id=1 returning id")).rows.length, 0);
 
-  const annotated = await save(copenhagen, "venue", club.id, 0, { queue_wait: "Short before midnight", vibe_tags: ["techno","social"] });
-  assert.deepEqual(annotated.vibe_tags, ["techno","social"]);
+  const annotated = await save(copenhagen, "venue", club.id, 0, { queue_wait: "Short before midnight", vibe_tags: ["techno","social","queer_friendly","sapphic"] });
+  assert.deepEqual(annotated.vibe_tags, ["techno","social","queer_friendly","sapphic"]);
   assert.equal(annotated.venue_intel.queue_wait, "Short before midnight");
   assert.equal(annotated.venue_intel.topic_evidence.queue_wait.status, "community_signal");
   await signIn(venueEditor);

@@ -58,8 +58,7 @@ export function buildPlaceAdminDraft(place) {
     : normalizePlaceVibeTags(
       Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
         ? place.vibe_tags
-        : inferVibeTagsFromLegacyVibe(vibeValue),
-      { max: 3 }
+        : inferVibeTagsFromLegacyVibe(vibeValue)
     );
   return {
     name: String(place?.name || ""),
@@ -90,8 +89,7 @@ export function buildEventAdminDraft(event) {
   const vibeTags = normalizeVibeTags(
     Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
       ? event.vibe_tags
-      : inferVibeTagsFromLegacyVibe(vibeValue),
-    { max: 3 }
+      : inferVibeTagsFromLegacyVibe(vibeValue)
   );
   return {
     name: String(event?.name || ""),

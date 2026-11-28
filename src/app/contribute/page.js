@@ -990,7 +990,7 @@ export default function ContributePage() {
         location: eventForm.address,
         ...buildVibeDualWriteFields({
           vibe: eventForm.vibe,
-          vibeTags: normalizeVibeTags(eventForm.vibe_tags, { max: 3 }),
+          vibeTags: normalizeVibeTags(eventForm.vibe_tags),
         }),
         description: eventForm.description,
         link: eventForm.link,
@@ -1098,7 +1098,7 @@ export default function ContributePage() {
           if (!missingVibeTags) {
             legacyPayload.vibe_tags = buildVibeDualWriteFields({
               vibe: eventForm.vibe,
-              vibeTags: normalizeVibeTags(eventForm.vibe_tags, { max: 3 }),
+              vibeTags: normalizeVibeTags(eventForm.vibe_tags),
             }).vibe_tags;
           }
           insertResult = await supabase
@@ -1672,8 +1672,7 @@ export default function ContributePage() {
         const placeVibeTags = normalizePlaceVibeTags(
           Array.isArray(place?.vibe_tags) && place.vibe_tags.length > 0
             ? place.vibe_tags
-            : inferVibeTagsFromLegacyVibe(String(place?.vibe || "")),
-          { max: 3 }
+            : inferVibeTagsFromLegacyVibe(String(place?.vibe || ""))
         );
         if (!String(place.description || "").trim()) issues.push("Missing description");
         if (String(place.description || "").trim().length < 140) issues.push("Description is short");
@@ -1696,8 +1695,7 @@ export default function ContributePage() {
         const eventVibeTags = normalizeVibeTags(
           Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
             ? event.vibe_tags
-            : inferVibeTagsFromLegacyVibe(String(event?.vibe || "")),
-          { max: 3 }
+            : inferVibeTagsFromLegacyVibe(String(event?.vibe || ""))
         );
         if (!String(event.description || "").trim()) issues.push("Missing description");
         if (String(event.description || "").trim().length < 120) issues.push("Description is short");
@@ -1945,7 +1943,7 @@ export default function ContributePage() {
                       onChange={(nextTags) => setPlaceForm((current) => ({ ...current, vibe_tags: nextTags }))}
                       excludeTags={["service", "store"]}
                       title="Place vibe tags"
-                      hint="Pick up to 3 standardized tags."
+                      hint="Pick up to 4 standardized tags."
                       tone="emerald"
                     />
                   )}
@@ -2071,7 +2069,7 @@ export default function ContributePage() {
                     value={eventForm.vibe_tags}
                     onChange={(nextTags) => setEventForm((current) => ({ ...current, vibe_tags: nextTags }))}
                     title="Event vibe tags"
-                    hint="Pick up to 3 standardized tags."
+                    hint="Pick up to 4 standardized tags."
                     tone="violet"
                   />
                   <div className="grid gap-3 md:grid-cols-2">

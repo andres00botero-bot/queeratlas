@@ -121,7 +121,7 @@ export default function AmbassadorEditor({ kind, row, assignment, venues, onClos
         {!TYPE_LABELS[draft.type] && <option>{draft.type}</option>}
         {Object.entries(TYPE_LABELS).filter(([value]) => value !== "cruising_area").map(([value, text]) => <option key={value} value={value}>{text}</option>)}
       </select></label>}
-      {(event || draft.type !== "store") && <VibeTagPicker title={event ? "Event vibe tags" : "Venue vibe tags"} hint="Choose up to 3 tags." tone="violet"
+      {(event || draft.type !== "store") && <VibeTagPicker title={event ? "Event vibe tags" : "Venue vibe tags"} hint="Choose up to 4 tags." tone="violet"
         value={draft.vibe_tags} excludeTags={event ? [] : ["store","service"]} onChange={tags => change("vibe_tags", tags)} />}
       {event && <div className="grid gap-4 sm:grid-cols-2">
         <EditorField {...fields} title="Start date" field="start_date" type="date" required={!row || Boolean(original.start_date)} />

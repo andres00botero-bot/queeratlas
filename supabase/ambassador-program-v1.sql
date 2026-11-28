@@ -301,11 +301,11 @@ begin
 
   if patch ? 'vibe_tags' then
     if jsonb_typeof(patch->'vibe_tags') <> 'array' then raise exception 'Invalid vibe tags'; end if;
-    if jsonb_array_length(patch->'vibe_tags')>3 or exists (
+    if jsonb_array_length(patch->'vibe_tags')>4 or exists (
       select from jsonb_array_elements_text(patch->'vibe_tags') tag
-      where tag is null or tag not in ('techno','pop','mixed','electronic','men_only','after','chill','cultural','fetish','social','cozy','massive','luxury','festival','underground','cruise','relax','drag','industrial','store','service')
+      where tag is null or tag not in ('techno','pop','mixed','electronic','men_only','after','chill','cultural','fetish','social','cozy','massive','luxury','festival','underground','cruise','relax','drag','industrial','store','service','queer_friendly','sapphic')
       group by tag
-    ) then raise exception 'Choose up to three standard vibe tags'; end if;
+    ) then raise exception 'Choose up to four standard vibe tags'; end if;
     if p_entity_type='venue' and coalesce(patch->>'type',before_row->>'type')='store' then
       patch := patch || '{"vibe_tags":["store"]}'::jsonb;
     elsif p_entity_type='venue' and (patch->'vibe_tags') ?| array['store','service'] then

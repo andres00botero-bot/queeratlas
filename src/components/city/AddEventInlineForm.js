@@ -51,7 +51,7 @@ export default function AddEventInlineForm({
         onChange={setEventVibeTags}
         tone="violet"
         title="Event vibe tags"
-        hint="Choose up to 3 tags for search and trip planner."
+        hint="Choose up to 4 tags for search and trip planner."
       />
       <input
         value={eventVibe}

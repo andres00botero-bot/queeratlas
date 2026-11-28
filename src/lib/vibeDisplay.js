@@ -1,4 +1,5 @@
 import {
+  DEFAULT_MAX_VIBE_TAGS,
   formatVibeTagLabel,
   inferVibeTagsFromLegacyVibe,
   normalizeVibeTag,
@@ -21,7 +22,7 @@ export function resolveTypeFallbackTag(type = "") {
 }
 
 export function resolveVibeTagsForEntity(entity = {}, options = {}) {
-  const max = Number(options.max || 3);
+  const max = Number(options.max || DEFAULT_MAX_VIBE_TAGS);
   const includeTypeFallback = options.includeTypeFallback === true;
   const includeMixedFallback = options.includeMixedFallback === true;
 

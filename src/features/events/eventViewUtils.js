@@ -23,8 +23,7 @@ export function mapGlobalEventRow(row) {
   const vibeTags = normalizeVibeTags(
     Array.isArray(row?.vibe_tags) && row.vibe_tags.length > 0
       ? row.vibe_tags
-      : inferVibeTagsFromLegacyVibe(vibeValue),
-    { max: 3 }
+      : inferVibeTagsFromLegacyVibe(vibeValue)
   );
   return normalizeEventRange({
     id: String(row.id),

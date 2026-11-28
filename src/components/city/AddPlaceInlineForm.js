@@ -54,7 +54,7 @@ export default function AddPlaceInlineForm({
           excludeTags={["service", "store"]}
           tone="emerald"
           title={t("city.venueVibeTags", "Venue vibe tags")}
-          hint={t("city.venueVibeTagsHint", "Choose up to 3 tags for standardized discovery.")}
+          hint={t("city.venueVibeTagsHint", "Choose up to 4 tags for standardized discovery.")}
         />
       )}
       <input

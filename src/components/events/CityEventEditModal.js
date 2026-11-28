@@ -83,7 +83,7 @@ export default function CityEventEditModal({
               onChange={(nextTags) => setDraft((current) => ({ ...current, vibe_tags: nextTags }))}
               tone="emerald"
               title="Event vibe tags"
-              hint="Pick up to 3 tags. These power filters and discovery."
+              hint="Pick up to 4 tags. These power filters and discovery."
             />
             <input
               value={draft.vibe}

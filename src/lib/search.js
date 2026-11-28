@@ -252,15 +252,15 @@ function matchesRequiredIntent(targetType, entity, intent, nowTs, timeZone) {
 function resolveEntityVibeTags(entity = {}, fallbackText = "") {
   const directTags = Array.isArray(entity?.vibe_tags) ? entity.vibe_tags : [];
   if (directTags.length > 0) {
-    return normalizeVibeTags(directTags, { max: 3 });
+    return normalizeVibeTags(directTags);
   }
 
-  const fallbackTags = inferVibeTagsFromLegacyVibe(String(fallbackText || entity?.vibe || ""), { max: 3 });
-  return normalizeVibeTags(fallbackTags, { max: 3 });
+  const fallbackTags = inferVibeTagsFromLegacyVibe(String(fallbackText || entity?.vibe || ""));
+  return normalizeVibeTags(fallbackTags);
 }
 
 function buildVibeSearchTerms(tags = [], legacyVibe = "") {
-  const normalizedTags = normalizeVibeTags(tags, { max: 3 });
+  const normalizedTags = normalizeVibeTags(tags);
   const tagLabels = normalizedTags.map((tag) => formatVibeTagLabel(tag)).filter(Boolean);
   const legacyValue = String(legacyVibe || "").trim();
   return [...normalizedTags, ...tagLabels, legacyValue].filter(Boolean);

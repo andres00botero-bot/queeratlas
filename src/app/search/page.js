@@ -86,7 +86,7 @@ function resolveItemVibeTags(item = {}) {
     const cityKey = normalizeVibeTag(item?.vibe || "");
     return cityKey ? [cityKey] : [];
   }
-  return resolveVibeTagsForEntity(item, { max: 3 });
+  return resolveVibeTagsForEntity(item);
 }
 
 function getItemDisplayName(item = {}) {

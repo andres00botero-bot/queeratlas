@@ -20,7 +20,7 @@ export default function VibeTagChips({
   entity = {},
   tone = "neutral",
   className = "",
-  max = 3,
+  max,
   showLegacy = false,
   includeTypeFallback = false,
   includeMixedFallback = false,

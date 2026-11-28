@@ -856,8 +856,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
     const eventVibeTags = normalizeVibeTags(
       Array.isArray(event?.vibe_tags) && event.vibe_tags.length > 0
         ? event.vibe_tags
-        : inferVibeTagsFromLegacyVibe(eventVibe),
-      { max: 3 }
+        : inferVibeTagsFromLegacyVibe(eventVibe)
     );
     setCityEditDraft({
       id: String(event?.id || ""),
@@ -914,7 +913,7 @@ export default function EventsPageClient({ initialSection = "calendar", initialE
       hours: String(cityEditDraft.hours || "").trim() || null,
       location: cityEditDraft.location || null,
       vibe: cityEditDraft.vibe || null,
-      vibe_tags: normalizeVibeTags(cityEditDraft.vibe_tags, { max: 3 }),
+      vibe_tags: normalizeVibeTags(cityEditDraft.vibe_tags),
       description: cityEditDraft.description || null,
       link: cityEditDraft.link || null,
       ticket_url: String(cityEditDraft.ticket_url || "").trim() || null,
